@@ -1,0 +1,7 @@
+{"children": [
+  {"name": "Eastern Conference", "standings": {"entries": [
+    {"team": {"displayName": "East Two"}, "stats": [{"name": "playoffSeed", "value": 2, "displayValue": "2"}, {"name": "overall", "displayValue": "6-3"}]},
+    {"team": {"displayName": "East One"}, "stats": [{"name": "playoffSeed", "value": 1, "displayValue": "1"}, {"name": "overall", "displayValue": "8-1"}]}]}},
+  {"name": "Western Conference", "standings": {"entries": [
+    {"team": {"displayName": "West One"}, "stats": [{"name": "playoffSeed", "value": 1, "displayValue": "1"}, {"name": "overall", "displayValue": "7-2"}]}]}}
+]}

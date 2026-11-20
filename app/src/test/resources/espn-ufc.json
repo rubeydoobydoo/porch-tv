@@ -1,0 +1,8 @@
+{
+  "leagues": [{"calendarType": "list", "calendar": []}],
+  "events": [{
+    "id": "6001", "name": "Example Fight Night", "date": "2026-11-22T00:00Z",
+    "status": {"type": {"state": "pre"}},
+    "competitions": [{"id": "6011", "date": "2026-11-22T00:00Z", "competitors": [{"winner": true, "score": "2468", "athlete": {"displayName": "Example Fighter"}}]}]
+  }]
+}

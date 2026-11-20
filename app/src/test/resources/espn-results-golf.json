@@ -1,0 +1,11 @@
+{"events": [
+  {"id": "5001", "name": "Example Open", "date": "2026-11-12T08:00Z", "endDate": "2026-11-15T08:00Z",
+   "status": {"type": {"state": "post"}},
+   "competitions": [{"competitors": [
+     {"order": 2, "score": "-18", "athlete": {"displayName": "Second Putter"}},
+     {"order": 1, "score": "-21", "athlete": {"displayName": "Robin Putter"}}]}]},
+  {"id": "5002", "name": "Example Classic", "date": "2026-11-16T08:00Z", "endDate": "2026-11-22T08:00Z",
+   "status": {"type": {"state": "post"}},
+   "competitions": [{"competitors": [
+     {"order": 1, "score": "-5", "athlete": {"displayName": "Leader Putter"}}]}]}
+]}

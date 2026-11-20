@@ -1,0 +1,50 @@
+# Runs the unit tests and a debug build on every PR and on main.
+# Also runs the fake provider's tests. No secrets, read-only token.
+name: Tests and build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # Official Gradle action: caches dependencies and checks the wrapper jar is genuine.
+      - uses: gradle/actions/setup-gradle@v4
+
+      # The runner image ships an Android SDK; add the exact platform and build-tools Porch pins.
+      - name: Android SDK 36
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+
+      - name: Unit tests and debug build
+        run: ./gradlew testDebugUnitTest assembleDebug
+
+      - name: Fake provider tests
+        run: python3 -I -m unittest discover -s tools/fakeiptv
+
+      - name: Test report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: app/build/reports/tests/
+          retention-days: 7

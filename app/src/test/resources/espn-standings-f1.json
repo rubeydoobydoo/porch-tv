@@ -1,0 +1,7 @@
+{"children": [
+  {"name": "Driver Standings", "standings": {"entries": [
+    {"athlete": {"displayName": "Pat Driver"}, "stats": [{"name": "rank", "value": 1}, {"name": "championshipPts", "value": 120, "displayValue": "120"}]},
+    {"athlete": {"displayName": "Second Driver"}, "stats": [{"name": "rank", "value": 2}, {"name": "championshipPts", "value": 99, "displayValue": "99"}]}]}},
+  {"name": "Constructor Standings", "standings": {"entries": [
+    {"team": {"displayName": "Example Racing"}, "stats": [{"name": "rank", "value": 1}, {"name": "championshipPts", "value": 200, "displayValue": "200"}]}]}}
+]}

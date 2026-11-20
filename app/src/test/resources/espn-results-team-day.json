@@ -1,0 +1,37 @@
+{
+  "leagues": [{"name": "Example League", "calendarType": "day", "calendar": ["2026-11-08T08:00Z", "2026-11-14T08:00Z", "2026-11-15T08:00Z", "2026-11-21T08:00Z"]}],
+  "events": [
+    {
+      "id": "2001", "name": "South City at North Town", "date": "2026-11-14T08:30Z",
+      "status": {"type": {"state": "post"}},
+      "competitions": [{"id": "2001", "competitors": [
+        {"homeAway": "away", "score": "1", "winner": false, "team": {"displayName": "South City"}},
+        {"homeAway": "home", "score": "3", "winner": true, "team": {"displayName": "North Town"}}
+      ]}]
+    },
+    {
+      "id": "2002", "name": "East Rovers at West Wanderers", "date": "2026-11-14T10:30Z",
+      "status": {"type": {"state": "post"}},
+      "competitions": [{"id": "2002", "competitors": [
+        {"homeAway": "home", "team": {"displayName": "West Wanderers"}},
+        {"homeAway": "away", "score": "2", "team": {"displayName": "East Rovers"}}
+      ]}]
+    },
+    {
+      "id": "2004", "name": "Blank Bears at Quiet Quokkas", "date": "2026-11-14T11:30Z",
+      "status": {"type": {"state": "post"}},
+      "competitions": [{"id": "2004", "competitors": [
+        {"homeAway": "home", "score": "", "team": {"displayName": "Quiet Quokkas"}},
+        {"homeAway": "away", "score": "1", "team": {"displayName": "Blank Bears"}}
+      ]}]
+    },
+    {
+      "id": "2003", "name": "Live Lions at Home Hawks", "date": "2026-11-21T08:30Z",
+      "status": {"type": {"state": "pre"}},
+      "competitions": [{"id": "2003", "competitors": [
+        {"homeAway": "home", "score": "0", "team": {"displayName": "Home Hawks"}},
+        {"homeAway": "away", "score": "0", "team": {"displayName": "Live Lions"}}
+      ]}]
+    }
+  ]
+}

@@ -1,0 +1,268 @@
+<title>Porch Movies Tab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap">
+<style>
+/* Layout: a review sheet. Each option is a 960x540 dp TV frame (DESIGN.md tokens, Dark look), scaled to fit, with a short note beside it. */
+:root {
+  color-scheme: dark;
+  --bg: #08090C; --surface: #14161C; --raised: #1E2129; --text: #F5F3EE; --text2: #C8C6C0;
+  --muted: #A8A6A0; --faint: #7E7C77; --line: #2A2C33; --accent: #F5A524; --on-accent: #0B0C10;
+  --focus: #F5F3EE; --on-focus: #0B0C10;
+  --page: #0E1014; --display: "Manrope", "Inter", system-ui, sans-serif; --body: "Inter", system-ui, sans-serif;
+}
+html, body { background: var(--page); color: var(--text); }
+body { font-family: var(--body); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 64px; }
+.page { max-width: 1180px; margin: 0 auto; display: grid; gap: 40px; }
+h1 { font-family: var(--display); font-size: 30px; font-weight: 800; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-size: 20px; font-weight: 800; margin: 0; }
+.lede { color: var(--text2); font-size: 15px; line-height: 1.55; max-width: 68ch; margin: 8px 0 0; }
+.picks { background: var(--surface); border-radius: 12px; padding: 20px 24px; display: grid; gap: 10px; font-size: 15px; line-height: 1.5; color: var(--text2); }
+.picks b { color: var(--text); }
+.picks ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+.option { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 820px) { .option { grid-template-columns: 1fr; } }
+.note { font-size: 14px; line-height: 1.55; color: var(--text2); display: grid; gap: 10px; min-width: 0; }
+.note h2 span { color: var(--accent); }
+.note .pick { color: var(--on-accent); background: var(--accent); border-radius: 999px; padding: 2px 10px; font-weight: 700; font-size: 12px; justify-self: start; }
+.note ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.wrap { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; position: relative; overflow: hidden; border-radius: 10px; outline: 1px solid var(--line); }
+
+/* ---------- the TV ---------- */
+.tv { position: absolute; left: 0; top: 0; width: 960px; height: 540px; transform-origin: 0 0; background: var(--bg); color: var(--text); font-family: var(--body); overflow: hidden; font-variant-numeric: tabular-nums; }
+.top { position: absolute; left: 32px; right: 32px; top: 0; height: 48px; display: flex; align-items: center; gap: 22px; }
+.top .title { font-family: var(--display); font-size: 22px; font-weight: 800; }
+.top .tabs { margin-left: auto; display: flex; gap: 22px; font-size: 14px; font-weight: 600; color: var(--text2); }
+.top .tabs .on { color: var(--accent); }
+.sec { font-family: var(--display); font-size: 15px; font-weight: 700; color: var(--text); }
+.sec small { font-family: var(--body); font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 8px; }
+.hint { position: absolute; left: 32px; right: 32px; bottom: 0; height: 32px; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: var(--muted); background: var(--bg); }
+.key { border: 1px solid var(--muted); border-radius: 5px; padding: 0 5px; color: var(--text); font-weight: 700; font-size: 11px; line-height: 16px; }
+.abs { position: absolute; }
+.row { display: flex; gap: 14px; }
+
+/* poster tile: 116 x 164, Tile radius 9. Solid stand-ins for the provider's posters. */
+.p { width: 116px; flex: none; display: grid; gap: 5px; }
+.p .art { height: 164px; border-radius: 9px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; font-family: var(--display); font-weight: 800; font-size: 15px; line-height: 1.1; color: #F5F3EE; }
+.p .art i { font-style: normal; font-family: var(--body); font-weight: 500; font-size: 10px; opacity: .8; margin-top: 4px; }
+.p .art.none { background: var(--surface); justify-content: center; align-items: center; text-align: center; font-family: var(--body); font-weight: 600; font-size: 13px; color: var(--text); }
+.p .t { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p .m { font-size: 12px; font-weight: 500; color: var(--muted); margin-top: -4px; }
+.p.f { transform: scale(1.06); transform-origin: 50% 40%; }
+.p.f .art { outline: 3px solid var(--focus); outline-offset: 2px; }
+.bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.bar b { display: block; height: 100%; background: var(--text2); }
+.p .bar { margin-top: 1px; }
+
+.chips { display: flex; gap: 10px; white-space: nowrap; }
+.chip { height: 40px; border-radius: 999px; background: var(--surface); color: var(--text); font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; flex: none; }
+.chip .tick { color: var(--accent); font-weight: 700; }
+.chip.f { background: var(--focus); color: var(--on-focus); }
+.chip.f .tick { color: var(--on-focus); }
+
+.rail { display: grid; gap: 4px; }
+.rr { height: 38px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; font-size: 14px; font-weight: 600; }
+.rr span { font-size: 12px; font-weight: 500; color: var(--muted); }
+.rr.chosen { background: var(--surface); }
+.rr.chosen::before { content: "✓"; color: var(--accent); margin-right: 8px; font-weight: 700; }
+.rr.chosen { justify-content: flex-start; }
+.rr.chosen span { margin-left: auto; }
+.rr.f { background: var(--focus); color: var(--on-focus); transform: scale(1.02); }
+.rr.f span { color: var(--on-focus); }
+
+.pill { height: 40px; border-radius: 999px; background: var(--surface); color: var(--text); font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; padding: 0 20px; }
+.pill.f { background: var(--focus); color: var(--on-focus); }
+.meta { font-size: 12px; font-weight: 500; color: var(--muted); }
+.plot { font-size: 13px; line-height: 19px; color: var(--text2); }
+</style>
+
+<div class="page">
+  <header>
+    <h1>Porch Movies tab: pick a layout</h1>
+    <p class="lede">On-demand v1, issue 109. Three ways to lay out the Movies tab and two film sheets, drawn at the TV's real size (960 by 540) with DESIGN.md's Dark look. The coloured blocks stand in for the provider's posters. Comment on any frame; tell me a letter and a number.</p>
+  </header>
+
+  <section class="picks">
+    <b>What I need from you</b>
+    <ol>
+      <li><b>Movies tab: A, B or C?</b> My pick is A. It reuses the 24/7 poster grid and chips, so it looks like the same app and costs the least code.</li>
+      <li><b>Film sheet: 1 or 2?</b> My pick is 1. It follows the programme sheet you already have, with a poster in place of the picture.</li>
+      <li><b>Resume bar colour.</b> Red means live and amber means chosen, so I'd draw the "how far in" bar in light grey (TextSecondary) on the Line track, and add that to DESIGN.md. Say if you want amber instead.</li>
+    </ol>
+    <span>My own call unless you say otherwise: Left and Right skip 10 seconds in the player, and holding them keeps skipping. Logged in DECISIONS.md.</span>
+  </section>
+
+  <!-- ===================== A ===================== -->
+  <div class="option">
+    <div class="wrap"><div class="tv">
+      <div class="top"><span class="title">Movies</span>
+        <div class="tabs"><span>Home</span><span>Full guide</span><span>What's on now</span><span>24/7</span><span class="on">Movies</span><span>Search</span><span>Settings</span></div></div>
+      <div class="abs sec" style="left:32px; top:54px">Continue watching</div>
+      <div class="abs row" style="left:32px; top:80px">
+        <div class="p f"><div class="art" style="background:#3A4A63">Harbour Lights<i>2021</i></div><div class="bar"><b style="width:36%"></b></div><div class="t">Harbour Lights</div></div>
+        <div class="p"><div class="art" style="background:#5B3E2E">Salt Road<i>2018</i></div><div class="bar"><b style="width:71%"></b></div><div class="t">Salt Road</div></div>
+        <div class="p"><div class="art" style="background:#2F4A3F">Kingfisher<i>2023</i></div><div class="bar"><b style="width:12%"></b></div><div class="t">Kingfisher</div></div>
+        <div class="p"><div class="art none">The Quiet Year</div><div class="bar"><b style="width:54%"></b></div><div class="t">The Quiet Year</div></div>
+      </div>
+      <div class="abs chips" style="left:32px; top:290px">
+        <span class="chip"><span class="tick">✓</span>New this week</span><span class="chip">Action</span><span class="chip">Comedy</span><span class="chip">Drama</span><span class="chip">Family</span><span class="chip">Thriller</span><span class="chip">Sci-fi</span><span class="chip">Documentary</span><span class="chip">Aussie</span>
+      </div>
+      <div class="abs row" style="left:32px; top:344px">
+        <div class="p"><div class="art" style="background:#4A3B5C">Northbound<i>2024</i></div><div class="t">Northbound</div></div>
+        <div class="p"><div class="art" style="background:#5C4A2A">Copper Sky<i>2024</i></div><div class="t">Copper Sky</div></div>
+        <div class="p"><div class="art" style="background:#2A4C5C">Low Tide<i>2024</i></div><div class="t">Low Tide</div></div>
+        <div class="p"><div class="art" style="background:#3E3E46">Glasshouse<i>2024</i></div><div class="t">Glasshouse</div></div>
+        <div class="p"><div class="art" style="background:#5A3446">Paper Moons<i>2024</i></div><div class="t">Paper Moons</div></div>
+        <div class="p"><div class="art" style="background:#2E5240">The Long Field<i>2024</i></div><div class="t">The Long Field</div></div>
+        <div class="p"><div class="art" style="background:#4C4430">Small Hours<i>2024</i></div><div class="t">Small Hours</div></div>
+      </div>
+      <div class="hint"><span class="key">OK</span> opens the film · Down for more of New this week</div>
+    </div></div>
+    <div class="note">
+      <span class="pick">My pick</span>
+      <h2><span>A</span> Shelf, chips, grid</h2>
+      <p>Continue watching on top. Under it, your categories as chips (like 24/7's filters) and the chosen category's posters, seven across. Down scrolls the grid.</p>
+      <ul><li>Fetches one category when its chip is chosen.</li><li>Same poster tile, chips and focus as 24/7.</li><li>Many categories means chips scroll off the right edge.</li></ul>
+    </div>
+  </div>
+
+  <!-- ===================== B ===================== -->
+  <div class="option">
+    <div class="wrap"><div class="tv">
+      <div class="top"><span class="title">Movies</span>
+        <div class="tabs"><span>Home</span><span>Full guide</span><span>What's on now</span><span>24/7</span><span class="on">Movies</span><span>Search</span><span>Settings</span></div></div>
+      <div class="abs rail" style="left:32px; top:58px; width:220px">
+        <div class="rr">Continue watching <span>4</span></div>
+        <div class="rr">New this week <span>212</span></div>
+        <div class="rr f">Action <span>1,284</span></div>
+        <div class="rr">Comedy <span>1,107</span></div>
+        <div class="rr">Drama <span>2,310</span></div>
+        <div class="rr">Family <span>644</span></div>
+        <div class="rr">Thriller <span>931</span></div>
+        <div class="rr">Sci-fi <span>418</span></div>
+        <div class="rr">Documentary <span>702</span></div>
+        <div class="rr">Aussie <span>156</span></div>
+      </div>
+      <div class="abs sec" style="left:284px; top:58px">Action<small>1,284 films</small></div>
+      <div class="abs" style="left:284px; top:86px; display:grid; gap:14px">
+        <div class="row">
+          <div class="p"><div class="art" style="background:#5C3A2A">Night Shift<i>2023</i></div><div class="t">Night Shift</div></div>
+          <div class="p"><div class="art" style="background:#2F3F5C">Far Country<i>2022</i></div><div class="t">Far Country</div></div>
+          <div class="p"><div class="art" style="background:#3F5232">Ironbark<i>2024</i></div><div class="t">Ironbark</div></div>
+          <div class="p"><div class="art none">Dust and Thunder</div><div class="t">Dust and Thunder</div></div>
+          <div class="p"><div class="art" style="background:#523E52">Breakwater<i>2021</i></div><div class="t">Breakwater</div></div>
+        </div>
+        <div class="row">
+          <div class="p"><div class="art" style="background:#3A4A4A">Overpass<i>2020</i></div><div class="t">Overpass</div></div>
+          <div class="p"><div class="art" style="background:#5C4A2A">Copper Sky<i>2024</i></div><div class="t">Copper Sky</div></div>
+          <div class="p"><div class="art" style="background:#2E3346">Signal Fire<i>2019</i></div><div class="t">Signal Fire</div></div>
+          <div class="p"><div class="art" style="background:#4C3530">Hard Country<i>2022</i></div><div class="t">Hard Country</div></div>
+          <div class="p"><div class="art" style="background:#304C46">Crosswind<i>2023</i></div><div class="t">Crosswind</div></div>
+        </div>
+      </div>
+      <div class="hint"><span class="key">OK</span> opens · Right to the films · Left back to the list</div>
+    </div></div>
+    <div class="note">
+      <h2><span>B</span> List and grid</h2>
+      <p>Categories as a list on the left, the focused one's posters on the right, five across. Continue watching is the first list row.</p>
+      <ul><li>Fetches a category after focus rests on it for a moment.</li><li>Shows ten categories at once, with film counts.</li><li>Continue watching is one press deeper than in A.</li></ul>
+    </div>
+  </div>
+
+  <!-- ===================== C ===================== -->
+  <div class="option">
+    <div class="wrap"><div class="tv">
+      <div class="top"><span class="title">Movies</span>
+        <div class="tabs"><span>Home</span><span>Full guide</span><span>What's on now</span><span>24/7</span><span class="on">Movies</span><span>Search</span><span>Settings</span></div></div>
+      <div class="abs" style="left:32px; top:52px; right:32px; height:165px; display:flex; gap:18px">
+        <div style="width:116px; height:165px; border-radius:9px; background:#3A4A63; flex:none; display:flex; align-items:flex-end; padding:10px; font-family:var(--display); font-weight:800; font-size:15px; line-height:1.1">Harbour Lights</div>
+        <div style="display:grid; gap:4px; align-content:start; min-width:0">
+          <div class="meta">Drama · 2021 · 1 h 52 min · 41 min in</div>
+          <div style="font-family:var(--display); font-size:28px; font-weight:800; line-height:31px">Harbour Lights</div>
+          <div class="plot" style="max-width:560px">A harbour pilot who has never left her home town takes one last job up the coast, and finds the family she walked away from twenty years ago waiting at the other end.</div>
+        </div>
+      </div>
+      <div class="abs sec" style="left:32px; top:229px">Continue watching</div>
+      <div class="abs row" style="left:32px; top:255px">
+        <div class="p f"><div class="art" style="background:#3A4A63">Harbour Lights<i>2021</i></div><div class="bar"><b style="width:36%"></b></div><div class="t">Harbour Lights</div></div>
+        <div class="p"><div class="art" style="background:#5B3E2E">Salt Road<i>2018</i></div><div class="bar"><b style="width:71%"></b></div><div class="t">Salt Road</div></div>
+        <div class="p"><div class="art" style="background:#2F4A3F">Kingfisher<i>2023</i></div><div class="bar"><b style="width:12%"></b></div><div class="t">Kingfisher</div></div>
+        <div class="p"><div class="art none">The Quiet Year</div><div class="bar"><b style="width:54%"></b></div><div class="t">The Quiet Year</div></div>
+      </div>
+      <div class="abs chips" style="left:32px; top:466px">
+        <span class="chip"><span class="tick">✓</span>New this week</span><span class="chip">Action</span><span class="chip">Comedy</span><span class="chip">Drama</span><span class="chip">Family</span><span class="chip">Thriller</span><span class="chip">Sci-fi</span>
+      </div>
+      <div class="hint"><span class="key">OK</span> resumes from 41:12 · Hold OK for the film's details</div>
+    </div></div>
+    <div class="note">
+      <h2><span>C</span> Preview pane on top</h2>
+      <p>Home's preview pane at the top, showing the focused film's plot as you move. Shelves under it.</p>
+      <ul><li>Feels most like Home.</li><li>The plot isn't in the category list, so Porch asks the provider for each film you rest on. More waiting, more load on a slow provider.</li><li>Only one shelf fits at a time.</li></ul>
+    </div>
+  </div>
+
+  <!-- ===================== Sheet 1 ===================== -->
+  <div class="option">
+    <div class="wrap"><div class="tv">
+      <div class="abs" style="left:32px; top:87px; width:260px; height:366px; border-radius:9px; background:#3A4A63; display:flex; align-items:flex-end; padding:18px; font-family:var(--display); font-weight:800; font-size:28px; line-height:1.05">Harbour Lights</div>
+      <div class="abs" style="left:324px; right:32px; top:87px; display:grid; gap:4px">
+        <div class="meta">Drama · 2021 · 1 h 52 min · Rated 7.4</div>
+        <div style="font-family:var(--display); font-size:22px; font-weight:800">Harbour Lights</div>
+        <div class="plot" style="margin-top:10px; max-width:520px">A harbour pilot who has never left her home town takes one last job up the coast, and finds the family she walked away from twenty years ago waiting at the other end. With Mara Quill, Tom Avery and Josie Lane. Directed by H. Okafor.</div>
+        <div style="margin-top:14px; display:grid; gap:6px; width:300px">
+          <div class="bar"><b style="width:36%"></b></div>
+          <div class="meta">41 min in · 1 h 11 min left</div>
+        </div>
+        <div style="margin-top:14px; display:flex; gap:14px">
+          <span class="pill f">Resume from 41:12</span><span class="pill">Play from the start</span>
+        </div>
+      </div>
+      <div class="hint"><span class="key">OK</span> plays · Left and Right skip 10 s while it plays · Back returns to Movies</div>
+    </div></div>
+    <div class="note">
+      <span class="pick">My pick</span>
+      <h2><span>1</span> Film sheet like the programme sheet</h2>
+      <p>The sheet you already know: picture on the left, words and pills on the right. The poster is portrait here, 260 by 366.</p>
+      <ul><li>A film you haven't started shows one pill: Play.</li><li>No plot from the provider means no plot line, never filler.</li><li>No poster: the title on a plain tile, as on 24/7.</li></ul>
+    </div>
+  </div>
+
+  <!-- ===================== Sheet 2 ===================== -->
+  <div class="option">
+    <div class="wrap"><div class="tv">
+      <div class="abs" style="left:0; top:0; width:360px; height:540px; background:#3A4A63; display:flex; align-items:flex-end; padding:32px; font-family:var(--display); font-weight:800; font-size:34px; line-height:1.05">Harbour Lights</div>
+      <div class="abs" style="left:400px; right:32px; top:0; bottom:32px; display:grid; gap:4px; align-content:center">
+        <div class="meta">Drama · 2021 · 1 h 52 min · Rated 7.4</div>
+        <div style="font-family:var(--display); font-size:28px; font-weight:800; line-height:31px">Harbour Lights</div>
+        <div class="plot" style="margin-top:10px">A harbour pilot who has never left her home town takes one last job up the coast, and finds the family she walked away from twenty years ago waiting at the other end. With Mara Quill, Tom Avery and Josie Lane. Directed by H. Okafor.</div>
+        <div style="margin-top:14px; display:grid; gap:6px; width:300px">
+          <div class="bar"><b style="width:36%"></b></div>
+          <div class="meta">41 min in · 1 h 11 min left</div>
+        </div>
+        <div style="margin-top:14px; display:flex; gap:14px">
+          <span class="pill f">Resume from 41:12</span><span class="pill">Play from the start</span>
+        </div>
+      </div>
+      <div class="hint" style="left:400px"><span class="key">OK</span> plays · Back returns to Movies</div>
+    </div></div>
+    <div class="note">
+      <h2><span>2</span> Tall poster edge to edge</h2>
+      <p>The poster fills the left third, top to bottom, with no margin. Bigger and more like a film app.</p>
+      <ul><li>Provider posters are often small, so they may look soft this big.</li><li>A new layout to add to DESIGN.md.</li></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  function fit() {
+    document.querySelectorAll('.wrap').forEach(function (w) {
+      var tv = w.querySelector('.tv');
+      if (tv) tv.style.transform = 'scale(' + (w.clientWidth / 960) + ')';
+    });
+  }
+  fit();
+  if (window.ResizeObserver) { var ro = new ResizeObserver(fit); document.querySelectorAll('.wrap').forEach(function (w) { ro.observe(w); }); }
+  else window.addEventListener('resize', fit);
+})();
+</script>

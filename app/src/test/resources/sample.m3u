@@ -1,0 +1,12 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="redfield.sport" tvg-name="Redfield Sport" tvg-logo="http://example.com/logo.png" group-title="Sport",Redfield Sport HD
+http://example.com/live/redfield.ts
+#EXTINF:-1 tvg-id="harbor.news" group-title="News",Harbor News
+#EXTGRP:Ignored
+http://example.com/live/harbor.ts
+#EXTINF:-1 tvg-chno="40" catchup-days="2",West Pier Cinema
+http://example.com/live/west.ts
+#EXTINF:-1 group-title="Kids",Title, with comma
+http://example.com/live/comma.ts
+#EXTINF:-1 tvg-id="north.harbor" tvg-name="North Harbor One",
+http://example.com/live/north.ts

@@ -1,0 +1,16 @@
+{
+  "leagues": [{"calendarType": "list", "calendar": []}],
+  "events": [{
+    "id": "2001", "name": "Example Grand Prix", "shortName": "Example GP",
+    "date": "2026-11-20T09:30Z", "endDate": "2026-11-22T17:00Z",
+    "status": {"type": {"state": "pre"}},
+    "competitions": [
+      {"id": "2011", "date": "2026-11-20T09:30Z", "type": {"abbreviation": "FP1"}, "status": {"type": {"state": "pre"}}},
+      {"id": "2012", "date": "2026-11-20T13:00Z", "type": {"abbreviation": "FP2"}, "status": {"type": {"state": "pre"}}},
+      {"id": "2013", "date": "2026-11-21T09:30Z", "type": {"abbreviation": "FP3"}, "status": {"type": {"state": "pre"}}},
+      {"id": "2014", "date": "2026-11-21T13:00Z", "type": {"abbreviation": "Qual"}, "status": {"type": {"state": "pre"}}},
+      {"id": "2015", "date": "2026-11-22T13:00Z", "type": {"abbreviation": "Race"}, "status": {"type": {"state": "pre"}},
+       "competitors": [{"order": 1, "winner": true, "score": "6543", "athlete": {"displayName": "Example Driver"}}]}
+    ]
+  }]
+}

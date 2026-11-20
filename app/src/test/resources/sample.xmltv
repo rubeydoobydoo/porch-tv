@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tv SYSTEM "xmltv.dtd">
+<!-- example guide, not a real listing -->
+<tv source-info-name="example">
+  <channel id="redfield.sport">
+    <display-name>Redfield Sport</display-name>
+    <display-name>Redfield Sport HD</display-name>
+  </channel>
+  <channel id="harbor.news">
+    <display-name>Harbor News</display-name>
+  </channel>
+  <programme start="20261025180000 +0000" stop="20261025200000 +0000" channel="redfield.sport">
+    <title>Grand Final replay</title>
+    <desc>A recorded match from North Harbor.</desc>
+    <category>Sport</category>
+  </programme>
+  <programme start="20261025180000 +0100" stop="20261025190000 +0100" channel="harbor.news">
+    <title>Evening &amp; Bulletin</title>
+    <desc><![CDATA[West Pier & docks]]></desc>
+  </programme>
+  <programme start="20261025180000" channel="harbor.news">
+    <title>Missing stop</title>
+  </programme>
+  <programme start="20261025200000 +0000" stop="20261025190000 +0000" channel="harbor.news">
+    <title>Backwards</title>
+  </programme>
+</tv>

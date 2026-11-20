@@ -1,0 +1,9 @@
+{
+  "leagues": [{"calendarType": "list", "calendar": []}],
+  "events": [{
+    "id": "3001", "name": "Sample Classic", "shortName": "Sample Classic",
+    "date": "2026-11-19T05:00Z", "endDate": "2026-11-22T05:00Z",
+    "status": {"type": {"state": "pre"}},
+    "competitions": [{"id": "3001", "competitors": [{"score": "-8642", "athlete": {"displayName": "Example Golfer"}}]}]
+  }]
+}

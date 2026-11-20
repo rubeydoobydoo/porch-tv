@@ -1,0 +1,9 @@
+{
+  "leagues": [{"calendarType": "list", "calendar": []}],
+  "events": [{
+    "id": "4001", "name": "Example Open", "shortName": "Example Open",
+    "date": "2026-11-23T05:00Z", "endDate": "2026-11-30T04:59Z",
+    "status": {"type": {"state": "pre"}},
+    "competitions": [{"id": "4011", "competitors": [{"winner": true, "score": "1357", "athlete": {"displayName": "Example Player"}}]}]
+  }]
+}

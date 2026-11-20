@@ -1,0 +1,46 @@
+{
+  "leagues": [{
+    "name": "Example League",
+    "calendarType": "day",
+    "calendar": ["2026-11-14T08:00Z", "2026-11-15T08:00Z", "2026-11-21T08:00Z", "2026-11-29T08:00Z", "2026-11-30T08:00Z"]
+  }],
+  "events": [
+    {
+      "id": "1001", "name": "South City at North Town", "shortName": "STH @ NTH",
+      "date": "2026-11-21T08:30Z",
+      "status": {"type": {"state": "pre"}},
+      "competitions": [{
+        "id": "1001", "date": "2026-11-21T08:30Z", "type": {"abbreviation": "STD"},
+        "venue": {"fullName": "Example Park"},
+        "competitors": [
+          {"homeAway": "away", "score": "9876", "winner": false, "linescores": [{"value": 9876}], "team": {"displayName": "South City", "shortDisplayName": "South"}},
+          {"homeAway": "home", "score": "5432", "winner": true, "linescores": [{"value": 5432}], "team": {"displayName": "North Town", "shortDisplayName": "North"}}
+        ]
+      }]
+    },
+    {
+      "id": "1002", "name": "East Rovers at West Wanderers", "shortName": "EAS @ WES",
+      "date": "2026-11-14T08:30:00Z",
+      "status": {"type": {"state": "post"}},
+      "competitions": [{
+        "id": "1002", "date": "2026-11-14T08:30:00Z", "type": {"abbreviation": "STD"},
+        "competitors": [
+          {"homeAway": "home", "score": "8765", "winner": true, "team": {"displayName": "West Wanderers", "shortDisplayName": "West"}},
+          {"homeAway": "away", "score": "4321", "winner": false, "team": {"displayName": "East Rovers", "shortDisplayName": "East"}}
+        ]
+      }]
+    },
+    {
+      "id": "1003", "name": "Live Lions at Home Hawks", "shortName": "LIO @ HAW",
+      "date": "2026-11-15T23:00Z",
+      "status": {"type": {"state": "in"}},
+      "competitions": [{
+        "id": "1003", "date": "2026-11-15T23:00Z", "type": {"abbreviation": "STD"},
+        "competitors": [
+          {"homeAway": "home", "score": "7654", "team": {"displayName": "Home Hawks", "shortDisplayName": "Hawks"}},
+          {"homeAway": "away", "score": "3210", "team": {"displayName": "Live Lions", "shortDisplayName": "Lions"}}
+        ]
+      }]
+    }
+  ]
+}

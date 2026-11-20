@@ -1,0 +1,21 @@
+{"events": [{
+  "id": "6001", "name": "Example Championships", "date": "2026-11-08T08:00Z", "endDate": "2026-11-15T08:00Z",
+  "status": {"type": {"state": "post"}},
+  "groupings": [
+    {"grouping": {"displayName": "Men's Singles"}, "competitions": [
+      {"date": "2026-11-14T08:00Z", "round": {"displayName": "Semifinal"}, "status": {"type": {"state": "post"}}, "competitors": [
+        {"winner": true, "athlete": {"displayName": "Semi Man"}}]},
+      {"date": "2026-11-15T03:00Z", "round": {"displayName": "Final"}, "status": {"type": {"state": "post"}}, "competitors": [
+        {"winner": false, "athlete": {"displayName": "Runner Man"}},
+        {"winner": true, "athlete": {"displayName": "Champ Man"}}]}]},
+    {"grouping": {"displayName": "Women's Singles"}, "competitions": [
+      {"date": "2026-11-14T08:00Z", "round": {"displayName": "Semifinal"}, "status": {"type": {"state": "post"}}, "competitors": [
+        {"winner": true, "athlete": {"displayName": "Semi Woman"}}]},
+      {"date": "2026-11-14T03:00Z", "round": {"displayName": "Final"}, "status": {"type": {"state": "post"}}, "competitors": [
+        {"winner": true, "athlete": {"displayName": "Champ Woman"}},
+        {"winner": false, "athlete": {"displayName": "Runner Woman"}}]}]},
+    {"grouping": {"displayName": "Men's Doubles"}, "competitions": [
+      {"date": "2026-11-15T05:00Z", "round": {"displayName": "Final"}, "status": {"type": {"state": "post"}}, "competitors": [
+        {"winner": true, "athlete": {"displayName": "Doubles Pair"}}]}]}
+  ]
+}]}

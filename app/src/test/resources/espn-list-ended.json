@@ -1,0 +1,10 @@
+{
+  "leagues": [{
+    "calendarType": "list",
+    "calendar": [{
+      "label": "Regular Season", "value": "2", "startDate": "2026-03-01T07:00Z", "endDate": "2026-09-01T06:59Z",
+      "entries": [{"label": "Round 1", "value": "1", "startDate": "2026-03-01T07:00Z", "endDate": "2026-03-08T06:59Z"}]
+    }]
+  }],
+  "events": []
+}

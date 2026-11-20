@@ -1,0 +1,27 @@
+*.iml
+.gradle/
+.idea/
+.DS_Store
+local.properties
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.hprof
+.kotlin/
+app/build/
+__pycache__/
+
+# Local files that are not part of the project
+*.pdf
+*.zip
+*.md-e
+REVIEW-*.md
+docs/shots-*/
+docs/ux-pack-*/
+docs/icon-options-*/
+review-shots/
+screenshots-local/

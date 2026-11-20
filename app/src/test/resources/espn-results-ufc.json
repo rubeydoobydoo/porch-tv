@@ -1,0 +1,15 @@
+{"events": [{
+  "id": "3001", "name": "Example Fight Night", "date": "2026-11-14T23:00Z",
+  "status": {"type": {"state": "post"}},
+  "competitions": [
+    {"id": "a", "status": {"type": {"state": "post"}}, "competitors": [
+      {"order": 1, "winner": true, "athlete": {"displayName": "Early Winner"}},
+      {"order": 2, "winner": false, "athlete": {"displayName": "Early Loser"}}]},
+    {"id": "b", "status": {"type": {"state": "post"}}, "competitors": [
+      {"order": 1, "winner": false, "athlete": {"displayName": "Mid Loser"}},
+      {"order": 2, "winner": true, "athlete": {"displayName": "Mid Winner"}}]},
+    {"id": "c", "status": {"type": {"state": "post"}}, "competitors": [
+      {"order": 1, "winner": true, "athlete": {"displayName": "Alex Example"}},
+      {"order": 2, "winner": false, "athlete": {"displayName": "Sam Sample"}}]}
+  ]
+}]}

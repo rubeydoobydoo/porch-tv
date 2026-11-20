@@ -1,0 +1,11 @@
+{"events": [{
+  "id": "4001", "name": "Example Grand Prix", "date": "2026-11-13T03:00Z",
+  "status": {"type": {"state": "post"}},
+  "competitions": [
+    {"id": "q", "date": "2026-11-14T06:00Z", "type": {"abbreviation": "Qual"}, "status": {"type": {"state": "post"}}, "competitors": [
+      {"order": 1, "winner": true, "athlete": {"displayName": "Quick Qualifier"}}]},
+    {"id": "r", "date": "2026-11-15T06:00Z", "type": {"abbreviation": "Race"}, "status": {"type": {"state": "post"}}, "competitors": [
+      {"order": 2, "winner": false, "athlete": {"displayName": "Second Driver"}},
+      {"order": 1, "winner": true, "athlete": {"displayName": "Pat Driver"}}]}
+  ]
+}]}
