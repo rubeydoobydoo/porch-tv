@@ -669,6 +669,8 @@ fun TvField(
     password: Boolean = false,
     onDone: (() -> Unit)? = null,
     placeholder: String? = null,
+    /** Where Down goes from this field and from its typing box, when it isn't the next field. */
+    downTo: FocusRequester? = null,
 ) {
     // The D-pad lands on the box, not the text, so passing through never opens the keyboard.
     // OK starts typing. Up or Down while typing leaves the box. The keyboard's action key
@@ -678,12 +680,15 @@ fun TvField(
     var editing by remember { mutableStateOf(false) }
     var focused by remember { mutableStateOf(false) }
     LaunchedEffect(editing) { if (editing) textFocus.requestFocus() }
+    // The typing box is a focus target inside the field's own, so a link set only on the outer one is lost while typing.
+    val linkDown = if (downTo != null) Modifier.focusProperties { down = downTo } else Modifier
     Column(modifier) {
         Text(label, style = PorchType.Meta)
         Spacer(Modifier.height(PorchSpace.SettingsGroupLabelGap))
         Box(
             Modifier
                 .fillMaxWidth()
+                .then(linkDown)
                 .onFocusChanged { focused = it.hasFocus }
                 .onKeyEvent { event ->
                     val ok = event.key == Key.DirectionCenter || event.key == Key.Enter || event.key == Key.NumPadEnter
@@ -695,12 +700,13 @@ fun TvField(
                     }
                 }
                 .focusable()
-                .background(if (focused) PorchColors.SurfaceRaised else PorchColors.Surface, RoundedCornerShape(PorchRadius.Row))
-                .border(if (focused) PorchFocus.Ring else 1.dp, if (focused) PorchColors.Focus else PorchColors.Line, RoundedCornerShape(PorchRadius.Row))
+                // Focus is the solid fill (DESIGN.md), with no ring; the text turns OnFocus so it stays readable on it.
+                .background(if (focused) PorchColors.Focus else PorchColors.Surface, RoundedCornerShape(PorchRadius.Row))
+                .border(1.dp, if (focused) PorchColors.Focus else PorchColors.Line, RoundedCornerShape(PorchRadius.Row))
                 .padding(horizontal = 14.dp, vertical = PorchSpace.SetupFieldPadY),
         ) {
             if (value.isEmpty() && placeholder != null) {
-                Text(placeholder, style = PorchType.Key.copy(fontWeight = FontWeight.Normal), color = PorchColors.Muted, maxLines = 1)
+                Text(placeholder, style = PorchType.Key.copy(fontWeight = FontWeight.Normal), color = if (focused) PorchColors.OnFocus else PorchColors.Muted, maxLines = 1)
             }
             androidx.compose.foundation.text.BasicTextField(
                 value = value,
@@ -720,8 +726,8 @@ fun TvField(
                         onDone?.invoke()
                     },
                 ),
-                textStyle = PorchType.Key.copy(color = PorchColors.Text),
-                cursorBrush = androidx.compose.ui.graphics.SolidColor(PorchColors.Text),
+                textStyle = PorchType.Key.copy(color = if (focused) PorchColors.OnFocus else PorchColors.Text),
+                cursorBrush = androidx.compose.ui.graphics.SolidColor(if (focused) PorchColors.OnFocus else PorchColors.Text),
                 visualTransformation = if (password) {
                     androidx.compose.ui.text.input.PasswordVisualTransformation()
                 } else {
@@ -729,6 +735,7 @@ fun TvField(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .then(linkDown)
                     .focusRequester(textFocus)
                     .focusProperties { canFocus = editing }
                     .onFocusChanged { if (!it.isFocused) editing = false }

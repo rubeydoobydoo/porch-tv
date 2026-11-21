@@ -329,6 +329,22 @@ class State:
         self._anchor = None
         self._anchor_ts = 0.0
         self._small = None
+        # Spike switches, set at start-up, off by default: seconds before a live stream sends anything, and how many live streams may be open at once (0 = no limit).
+        self.start_delay = 0.0
+        self.max_connections = 0
+        self.open_streams = 0
+
+    def take_stream(self):
+        """Count a live stream as open. False when the connection limit is already reached."""
+        with self.lock:
+            if self.max_connections and self.open_streams >= self.max_connections:
+                return False
+            self.open_streams += 1
+            return True
+
+    def drop_stream(self):
+        with self.lock:
+            self.open_streams -= 1
 
     def reset_switches(self):
         self.sw = {k: v[0] for k, v in SWITCHES.items()}
@@ -579,9 +595,16 @@ class Handler(BaseHTTPRequestHandler):
             time.sleep(5)
         if mode == "dead" or (mode in ("dead1", "slow2") and cid == 1):
             return self.text(503, "Fake provider says: this stream is down (stream switch).")
-        clip = self.clip_or_503()
-        if clip:
-            self.live_ts(clip, cid) if ext == "ts" else self.live_m3u8(clip, cid)
+        if self.st.start_delay:
+            time.sleep(self.st.start_delay)
+        if not self.st.take_stream():
+            return self.text(503, "Fake provider says: too many connections (max-connections).")
+        try:
+            clip = self.clip_or_503()
+            if clip:
+                self.live_ts(clip, cid) if ext == "ts" else self.live_m3u8(clip, cid)
+        finally:
+            self.st.drop_stream()
 
     def movie(self, user, password, vid):
         if self.blocked():
@@ -607,7 +630,17 @@ class Handler(BaseHTTPRequestHandler):
                 if mode in ("drop20", "end20", "stall20") and time.monotonic() - began >= MISBEHAVE_AFTER:
                     return self.misbehave(mode)
                 time.sleep(min(0.25, max(0.0, until - time.monotonic())))
+                if self.st.max_connections and self.client_left():
+                    return  # a real provider frees the slot as soon as the viewer leaves
             i = (i + 1) % len(clip)
+
+    def client_left(self):
+        """True when the viewer has closed the connection (used with --max-connections, so a slot frees at once)."""
+        try:
+            ready, _, _ = select.select([self.request], [], [], 0)
+            return bool(ready) and self.request.recv(1, socket.MSG_PEEK) == b""
+        except OSError:
+            return True
 
     def misbehave(self, mode):
         log(f"STREAM {mode}: acting up now")
@@ -718,10 +751,12 @@ def catchup_line(state, cid, sent, lutc):
 # --------------------------------------------------------------------- cli
 
 
-def make_server(port, big=False):
+def make_server(port, big=False, start_delay=0.0, max_connections=0):
     httpd = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     httpd.daemon_threads = True
     httpd.state = State(big)
+    httpd.state.start_delay = start_delay
+    httpd.state.max_connections = max_connections
     return httpd
 
 
@@ -734,8 +769,8 @@ def lan_ip():
         return "your-mac-ip"
 
 
-def serve(port, big):
-    httpd = make_server(port, big)
+def serve(port, big, start_delay=0.0, max_connections=0):
+    httpd = make_server(port, big, start_delay, max_connections)
     st = httpd.state
     log("Fake IPTV provider. Dev only. Every channel and login here is made up.")
     for label, host in (("Android emulator", "10.0.2.2"), ("Real box on Wi-Fi", lan_ip())):
@@ -802,6 +837,8 @@ def main(argv=None):
     ap.add_argument("command", nargs="?", choices=["serve", "fetch-video"], default="serve")
     ap.add_argument("--port", type=int, default=8900)
     ap.add_argument("--big", action="store_true", help="20,000 channels and about 300,000 programmes")
+    ap.add_argument("--start-delay", type=float, default=0.0, help="seconds a live stream waits before it sends anything (spike; default 0)")
+    ap.add_argument("--max-connections", type=int, default=0, help="live streams open at once; more get HTTP 503 (spike; default 0 = no limit)")
     ap.add_argument("--tz", default=SERVER_TZ, help="panel time zone to report and read catch-up in, e.g. Australia/Sydney")
     args = ap.parse_args(argv)
     try:
@@ -812,7 +849,7 @@ def main(argv=None):
     SERVER_TZ = args.tz
     if args.command == "fetch-video":
         return fetch_video(State().cache)
-    serve(args.port, args.big)
+    serve(args.port, args.big, args.start_delay, args.max_connections)
     return 0
 
 

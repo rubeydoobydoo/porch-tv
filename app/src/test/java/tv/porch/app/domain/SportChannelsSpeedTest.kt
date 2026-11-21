@@ -59,7 +59,7 @@ class SportChannelsSpeedTest {
     }
 
     @Test
-    fun a_big_guide_links_in_well_under_a_second() {
+    fun a_big_guide_links_in_a_few_seconds() {
         // 600 channels make about 218,000 airings.
         val (fixtures, airings) = guide(600)
         // Best of three, after a warm-up, so the timing is the steady cost and not class loading or a stray GC.
@@ -74,7 +74,7 @@ class SportChannelsSpeedTest {
 
         assertEquals(fixtures.size, found.size)
         assertTrue(found.values.all { it.channels.size == 3 })
-        // A guard only: a desktop JVM is many times faster than the Chromecast (before the fix, about 0.5 s here).
-        assertTrue("took $tookMs ms", tookMs < 1_000)
+        // A guard only: a desktop JVM is many times faster than the Chromecast. 3 s leaves room for a busy shared CI runner (Ruben, 20 Nov).
+        assertTrue("took $tookMs ms", tookMs < 3_000)
     }
 }

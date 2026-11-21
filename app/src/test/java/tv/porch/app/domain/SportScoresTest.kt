@@ -33,29 +33,25 @@ class SportScoresTest {
 
     @Test
     fun hidden_rows_never_carry_the_spoiler_and_revealing_one_shows_only_that_row() {
-        val ladder = Ladder("NFL", "NFL", null, listOf(LadderRow("Alpha", 1, "SECRETSTATS"), LadderRow("Beta", 2, "SECRETSTATS")))
         val secret = SportScoreRules.resultSections(results, now, zone, emptyList(), emptySet()).flatMap { it.rows }
         assertTrue(secret.all { it.shown == "Hidden" && !it.title.contains("SECRET") && !it.meta.contains("SECRET") })
-        val ladders = SportScoreRules.ladderSections(listOf(ladder), emptyList(), emptySet()).flatMap { it.rows }
-        assertTrue(ladders.all { it.shown == "Hidden" && !it.title.contains("SECRETSTATS") && !it.meta.contains("SECRETSTATS") })
 
         val key = SportScoreRules.resultKey(results[0])
         val shown = SportScoreRules.resultSections(results, now, zone, emptyList(), setOf(key)).flatMap { it.rows }
         assertEquals(listOf("SECRET 1"), shown.filter { it.revealed }.map { it.shown })
         assertTrue(shown.filter { !it.revealed }.all { it.shown == "Hidden" })
-
-        val lKey = SportScoreRules.ladderKey(ladder, ladder.rows[1])
-        val lShown = SportScoreRules.ladderSections(listOf(ladder), emptyList(), setOf(lKey)).flatMap { it.rows }
-        assertEquals(listOf("Hidden", "2nd · SECRETSTATS"), lShown.map { it.shown })
     }
 
     @Test
-    fun ladder_rows_go_a_to_z_with_followed_first() {
-        val ladder = Ladder("NFL", "NFL", "East", listOf(LadderRow("Cats", 1, ""), LadderRow("apples", 2, ""), LadderRow("Bears", 3, "")))
-        val section = SportScoreRules.ladderSections(listOf(ladder), listOf("Cats"), emptySet()).single()
+    fun ladder_rows_are_always_shown_in_position_order_and_followed_teams_do_not_move() {
+        val ladder = Ladder("NFL", "NFL", "East", listOf(LadderRow("Cats", 3, "9 pts"), LadderRow("apples", 1, "12 pts"), LadderRow("Bears", 2, "")))
+        val section = SportScoreRules.ladderSections(listOf(ladder), listOf("Cats")).single()
         assertEquals("NFL · East", section.heading)
-        assertEquals(listOf("Cats", "apples", "Bears"), section.rows.map { it.title })
-        assertTrue(section.rows[0].followed)
+        assertEquals(listOf("apples", "Bears", "Cats"), section.rows.map { it.title })
+        assertEquals(listOf(1, 2, 3), section.rows.map { it.position })
+        assertEquals(listOf("12 pts", "", "9 pts"), section.rows.map { it.shown })
+        assertEquals(listOf(false, false, true), section.rows.map { it.followed })
+        assertTrue(section.rows.all { it.revealed })
     }
 
     @Test
@@ -99,13 +95,13 @@ class SportScoresTest {
     }
 
     @Test
-    fun the_same_team_in_two_groups_has_two_keys_and_revealing_one_shows_only_it() {
+    fun the_same_team_in_two_groups_has_two_keys_and_both_show_their_own_stats() {
         val east = Ladder("NBA", "NBA", "East", listOf(LadderRow("Same Name", 1, "EASTSTATS")))
         val west = Ladder("NBA", "NBA", "West", listOf(LadderRow("Same Name", 2, "WESTSTATS")))
         val eastKey = SportScoreRules.ladderKey(east, east.rows[0])
         assertFalse(eastKey == SportScoreRules.ladderKey(west, west.rows[0]))
-        val rows = SportScoreRules.ladderSections(listOf(east, west), emptyList(), setOf(eastKey)).flatMap { it.rows }
-        assertEquals(listOf("1st · EASTSTATS", "Hidden"), rows.map { it.shown })
+        val rows = SportScoreRules.ladderSections(listOf(east, west), emptyList()).flatMap { it.rows }
+        assertEquals(listOf("EASTSTATS", "WESTSTATS"), rows.map { it.shown })
     }
 
     @Test

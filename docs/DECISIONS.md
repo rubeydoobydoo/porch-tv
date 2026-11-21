@@ -689,6 +689,9 @@ Emulator (20 Nov): Leave on the "Leave Porch?" card goes to the TV home screen, 
 ### 20 Nov 2026: Usability walk fixes
 Simple mode cold start now zaps the favourites (one copy of each channel, by number, as the simple Home lists them), with the last channel first when it is not a favourite. This replaces the earlier choice to keep the last channel's playlist group. Hold OK in simple mode loses Remove from Favourites (Add stays). "What else is on" in simple mode folds only favourites. The reconnect try count shows the allowed number for that run (6, or fewer when another copy of the channel is waiting). "Open Settings" on Home goes to the Settings tab, not straight to the source's edit screen: smaller, and Settings lists the failed source. Claude's call.
 
+### 20 Nov 2026: Settings opens on Channels on every tab visit
+Bug: `SettingsViewModel.lastRow` is activity-scoped (no Navigation-Compose), so after editing a source, leaving by the tabs and coming back landed on the source row, not Channels (PR 127's promise). Fix: `SettingsFocus.startRow(lastRow, comingBack)` (domain, pure). `PorchApp.push` sets a `settingsBack` flag when the screen under the push is Settings; `showTab` clears it. Back from Edit, Channels, Setup and the other pushed screens still lands on the row you left; any tab visit starts on Channels. No new setting, no schema change. Claude's call.
+
 ### 20 Nov 2026: going public (Ruben's calls)
 The public copy is a new repo `porch-tv` with one fresh commit. Old history holds a personal email and real-TV screenshots, and GitHub's PR records keep them even after a rewrite. Ruben's call.
 This private repo stays as it is. Ruben's call.
@@ -696,3 +699,40 @@ Fable's six legal wording fixes (C11) are applied to the README, INSTALL and ROA
 The default Australian free-to-air backup guide stays, and is listed under "What Porch connects to" in the README. Ruben's call.
 No APK download until there is a proper release key. Ruben's call.
 TMDB posters come later. Ruben's call.
+
+### 20 Nov 2026: SportChannelsSpeedTest time limit
+The guard in `SportChannelsSpeedTest` went from 1,000 ms to 3,000 ms, and the test is now `a_big_guide_links_in_a_few_seconds`. It failed twice on a shared CI runner (19 and 20 Nov) and passed on re-run both times. It still fails if linking goes back to a slow pattern such as building a Regex per row. Approved by Ruben.
+
+### 20 Nov 2026: Walk 2, setup, Settings, Search, 24/7, Pick channels
+- Setup text fields focus with the `Focus` fill and `OnFocus` text, no ring (DESIGN.md's rule). Readable, so no `SurfaceRaised` needed. The Down link to Save is now also set on the typing box inside each field: the old link on the outer box was lost while typing, which is the likely cause of Down landing on Cancel.
+- A default source name (the host) gets " 2", " 3" when taken (`SourceNames.unique`, applied in `addSource` for blank names only). A name the viewer typed is kept.
+- 24/7 poster tiles now focus like Movies (fill card). DESIGN.md's 24/7 line updated.
+- Settings opens at the top on a fresh visit when the Channels row still fits on screen; otherwise it scrolls as before.
+- Search shows the source name in a row's muted line only when the same channel name appears twice in the results. Claude's call.
+
+### 20 Nov 2026: ladders always show, and more groups count as 24/7
+Ladders are no longer hidden. Rows go in position order, position at the left (new token `LadderPositionWidth`, 44 dp), stats at the right, and OK does nothing on a ladder row. Followed teams keep the "Following" label and do not move. Results stay hidden until OK exactly as before. Ruben's call, 20 Nov.
+`LoopChannels.inLoopGroup` now accepts a 24/7 token (24/7, 24 / 7, 24-7, 24x7) anywhere in the group name, so "EN| 24/7 CARTOONS" and "24-7 KIDS" reach the 24/7 tab. "1247" and "24/70" do not match. `genreOf` drops leading provider labels ("EN|", "|UK|"). The only caller path is `LoopChannels.listed`, used by the 24/7 tab; other lists are unchanged. Claude's call.
+
+## 20 Nov: CI runs less often
+
+Actions ran out of minutes on 20 Nov (3,000 a month, shared by every private repo; Porch had 226 runs in November). The workflow no longer runs on `main` after a merge (the PR already ran the same build), on draft PRs, or on PRs that only change Markdown, `docs/`, the licence or `third_party/`. It can be started by hand. Builders already run the full gate locally before pushing. Ruben approved this and merging on a local green while minutes are out.
+
+### 21 Nov 2026: zap speed spike (measure only)
+- The warm-neighbour prototype only prepares and logs; it does not swap the ready player into the view. A swap changes who owns the one player on screen, which is too big for a spike. The saving is estimated, and the doc says so. Claude's call.
+- The prototype is gated twice (debuggable build and a flag file in the app folder), so it cannot run in a release build. Claude's call.
+- The fake provider frees a connection slot when the viewer closes (checked every 0.25 s), but only when `--max-connections` is set, so its other behaviour is unchanged. Claude's call.
+- Recommendation in `docs/spikes/2026-11-zap-speed.md`: do not build it by default; ask the provider's limit first.
+
+- 22 Nov: warm zapping is shelved (Claude's pick at Ruben's "pick", 22 Nov). Most provider logins allow 1 or 2 streams; at 1 the warm stream is always refused, and at 2 it made zaps about 2 s slower (4.5 s against 2.4 s). The debug-only WarmProbe prototype and its PlayerScreen hook were removed before merge, so no app code changed. The spike notes and the fake provider's `--start-delay` and `--max-connections` switches stay for any later try.
+
+## 22 Nov: Ruben's "pick" answers
+
+Ruben answered the open calls on 22 Nov. For each one below he said "pick", so each is Claude's pick at Ruben's "pick", 22 Nov.
+- Warm zapping is shelved (PR 142, see the 21 Nov spike entry above).
+- One roadmap: PLAN.md wins. ROADMAP.md no longer lists Recording or Profiles as next; both move to "Left out on purpose", with PLAN's reasons (too heavy for the Chromecast; one shared favourites list, simple mode covers a family TV). ROADMAP lists PLAN's post-launch order. Sync and team alerts stay as "ideas, not planned".
+- The now-and-next mini guide on Down is dropped: Down is zap. Number keys are dropped too: the Chromecast with Google TV remote has no number keys.
+- The public copy porch-tv is to be refreshed to main after this docs PR, by the CLAUDE.md rule, only if the scan is clean.
+- Next goal: remember audio and subtitle choices per channel. Its contract is on `docs/BOARD.md` and waits for Ruben's OK before code. Risk MID: one new table keyed on the channel's source and identity, so refresh needs no copy step and existing tables are untouched.
+- Cleanup: removed the worktrees whose branches were merged into main and clean, with their local and remote branches (ci-trim, goal1-player, goal2-sources, goal3-dad-tv, goal4-setup, show-in-two-categories, walk2-a, walk2-b, walk2-c). Kept: agent-a9141aec (locked, adb running in it), hide-group-fast, settings-fresh-focus, usability-walk, vodplayer-url-key and zap-speed-spike (a Claude process still open in each; hide-group-fast also has an untracked file), release-a83 (detached, no branch), walk2-shots (not merged).
+- Ladders and 24/7 on the living room TV: parked until Ruben reports something. Claude can't see that TV, and it is not a test device.

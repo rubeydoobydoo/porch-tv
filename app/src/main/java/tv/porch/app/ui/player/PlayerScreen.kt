@@ -407,7 +407,7 @@ fun PlayerScreen(graph: AppGraph, token: Long, onExit: () -> Unit) {
             }
             if (!swapped && failure != null && isFormatError(failure) && url.substringBefore('?').endsWith(".ts", ignoreCase = true)) {
                 swapped = true
-                banner = "Trying another stream format…"
+                banner = PlayRules.TRYING_FORMAT
                 continue
             }
             attempt++
@@ -526,13 +526,15 @@ fun PlayerScreen(graph: AppGraph, token: Long, onExit: () -> Unit) {
         if (channels.isEmpty()) return
         val next = PlayRules.zapTarget(pendingIndex, delta, channels.size)
         if (next == null) {
-            // The end of the list: say so, then let it go. Never over a drop or a start already being worded.
-            if (banner == null && stopReason == null) {
+            // The end of the list: say so, then let it go. Fine while a channel is still starting; never over a drop or another message.
+            if (PlayRules.canSayEndOfList(banner, tryingNote, stopReason != null)) {
+                val before = banner
                 banner = PlayRules.END_OF_LIST
                 overlay = true
                 scope.launch {
                     delay(2_000)
-                    if (banner == PlayRules.END_OF_LIST) banner = null
+                    // A channel still starting gets its start words back, so the overlay doesn't hide while it loads.
+                    if (banner == PlayRules.END_OF_LIST) banner = PlayRules.afterEndOfList(before, tryingNote)
                 }
             }
             return
@@ -1005,11 +1007,12 @@ private fun Overlay(
                 .padding(start = PorchSpace.Margin, end = PorchSpace.Margin, bottom = PorchSpace.TileGap),
         ) {
             banner?.let {
-                Text(it, style = PorchType.Body, color = PorchColors.Text)
+                Text(it, style = PorchType.GuideCell, color = PorchColors.Text)
                 Spacer(Modifier.height(PorchSpace.TileGap))
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(PorchSpace.TileGap)) {
-                if (catchup == null) LiveChip() else Text("Catch-up", style = PorchType.Meta)
+                if (paused) Text("Paused", style = PorchType.Meta, color = PorchColors.Text)
+                else if (catchup == null) LiveChip() else Text("Catch-up", style = PorchType.Meta)
                 ChannelLogo(channel, channelColor(channel), PorchSpace.PlayerBadge, PorchType.TileTitle)
                 Text(channel.shownTitle, style = PorchType.TileTitle, color = PorchColors.TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("· ${channel.number}", style = PorchType.TileTitle, color = PorchColors.Muted, maxLines = 1)
@@ -1037,7 +1040,7 @@ private fun Overlay(
             }
             Spacer(Modifier.height(PorchSpace.TileGap))
             Row(horizontalArrangement = Arrangement.spacedBy(PorchSpace.HomeTileGap)) {
-                for (hint in listOf(if (reconnecting) "OK tries again · Up / Down change channel" else if (paused) "Hold OK for menu" else "OK pauses · Up / Down change channel", "Left rewinds", "Right: what else is on", "Back hides this")) {
+                for (hint in listOf(if (reconnecting) "OK tries again · Up / Down change channel" else if (paused) "OK plays · Up / Down change channel" else "OK pauses · Up / Down change channel", "Left rewinds", "Right: what else is on", "Back hides this")) {
                     Text(hint, style = PorchType.Hint, maxLines = 1)
                 }
             }

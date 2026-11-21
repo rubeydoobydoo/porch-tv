@@ -79,6 +79,7 @@ import tv.porch.app.domain.GroupChoice
 import tv.porch.app.domain.GuideClock
 import tv.porch.app.domain.HomeLists
 import tv.porch.app.domain.SearchKeys
+import tv.porch.app.domain.SearchRepeats
 import tv.porch.app.domain.Tabs
 import tv.porch.app.domain.formatHeaderClockLong
 import tv.porch.app.domain.formatLaterStart
@@ -89,6 +90,7 @@ import tv.porch.app.ui.components.FavouriteStar
 import tv.porch.app.ui.components.LocalQuickMenu
 import tv.porch.app.ui.components.ChannelLogo
 import tv.porch.app.ui.components.LiveRowItem
+import tv.porch.app.ui.components.OkKeycap
 import tv.porch.app.ui.components.Pill
 import tv.porch.app.ui.components.ProgressTrack
 import tv.porch.app.ui.components.SectionHeader
@@ -211,6 +213,10 @@ fun SearchScreen(
     // Keep the shared channel list live while Search is open, so a query never reads a list a refresh has replaced.
     val keepChannels by remember { graph.folds.listing }.collectAsState(null)
     val hits = answer.second
+    val sourceNames by remember { graph.repository.observeSources() }.collectAsStateWithLifecycle(emptyList())
+    // A channel name that shows twice (two sources) gets its source name in the row's muted line, so the rows differ.
+    val repeated = remember(hits) { SearchRepeats.repeated((hits.onNow.map { it.first } + hits.later.map { it.first } + hits.channels).map { it.shownTitle to it.sourceId }) }
+    fun sourceOf(channel: Channel) = sourceNames.firstOrNull { it.id == channel.sourceId }?.name
     val films by model.films.collectAsStateWithLifecycle()
     val shows by model.shows.collectAsStateWithLifecycle()
     var openFilm by remember { mutableStateOf<Film?>(null) }
@@ -270,7 +276,7 @@ fun SearchScreen(
             current = "Search",
             onTab = onTab,
         )
-        Row(Modifier.fillMaxSize().padding(start = PorchSpace.Margin, end = PorchSpace.Margin - PorchSpace.FocusRoom, top = PorchSpace.SearchTop)) {
+        Row(Modifier.weight(1f).fillMaxWidth().padding(start = PorchSpace.Margin, end = PorchSpace.Margin - PorchSpace.FocusRoom, top = PorchSpace.SearchTop)) {
             Column(Modifier.width(PorchSpace.SearchLeft)) {
                 QueryField(model.query)
                 Spacer(Modifier.height(PorchSpace.SearchKeyGap * 2))
@@ -334,7 +340,7 @@ fun SearchScreen(
                     }
                     model.query.isBlank() -> Text("Type a show or channel.", style = PorchType.Body, color = PorchColors.Muted)
                     searching -> Text("Searching…", style = PorchType.Body, color = PorchColors.Muted)
-                    !hasResults -> Text("Nothing matches.", style = PorchType.Body, color = PorchColors.Muted)
+                    !hasResults -> Text("Nothing matches. Try fewer letters.", style = PorchType.Body, color = PorchColors.Muted)
                     else -> {
                         var first = true
                         fun place(): Modifier {
@@ -349,7 +355,7 @@ fun SearchScreen(
                                     val start = GuideClock.shift(programme.startUtc, offset)
                                     val stop = GuideClock.shift(programme.stopUtc, offset)
                                     ResultRow(
-                                        channel, programme.title, "${channel.shownTitle}  ·  ${formatLeft(stop - now)}",
+                                        channel, programme.title, SearchRepeats.meta("${channel.shownTitle}  ·  ${formatLeft(stop - now)}", channel.shownTitle, repeated, sourceOf(channel)),
                                         place().then(toGrid), progressOf(start, stop, now),
                                         onLong = { quick.open(channel) },
                                     ) { onPlay(hits.onNow.map { it.first }, channel) }
@@ -361,7 +367,7 @@ fun SearchScreen(
                                 hits.later.take(GROUP_CAP).forEach { (channel, programme) ->
                                     val start = GuideClock.shift(programme.startUtc, hits.offsets[channel.sourceId] ?: 0)
                                     ResultRow(
-                                        channel, programme.title, "${channel.shownTitle}  ·  ${formatLaterStart(start, now)}",
+                                        channel, programme.title, SearchRepeats.meta("${channel.shownTitle}  ·  ${formatLaterStart(start, now)}", channel.shownTitle, repeated, sourceOf(channel)),
                                         place().then(toGrid), null,
                                         onLong = { quick.open(channel) },
                                     ) { onPlay(hits.later.map { it.first }, channel) }
@@ -375,7 +381,7 @@ fun SearchScreen(
                                         pair.forEachIndexed { index, channel ->
                                             val where = channel.number.takeIf { it > 0 }?.let { "Ch $it" } ?: channelMeta(channel)
                                             ResultRow(
-                                                channel, channel.shownTitle, where,
+                                                channel, channel.shownTitle, SearchRepeats.meta(where, channel.shownTitle, repeated, sourceOf(channel)),
                                                 Modifier.weight(1f).then(place()).then(if (index == 0) toGrid else Modifier), null,
                                                 onLong = { quick.open(channel) },
                                             ) { onPlay(hits.channels, channel) }
@@ -403,6 +409,7 @@ fun SearchScreen(
                 }
             }
         }
+        SearchHint()
     }
     openFilm?.let { film ->
         FilmSheet(
@@ -427,6 +434,19 @@ fun SearchScreen(
             onClose = { openShow = null },
             backWording = "Back returns to Search",
         )
+    }
+}
+
+/** The bar at the foot of Search, like the other screens'. */
+@Composable
+private fun SearchHint() {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = PorchSpace.Margin, vertical = PorchSpace.TileGap),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(PorchSpace.HomeTilePad),
+    ) {
+        OkKeycap()
+        Text("types a letter or plays a result   ·   Hold OK on a channel for the quick menu", style = PorchType.Hint)
     }
 }
 

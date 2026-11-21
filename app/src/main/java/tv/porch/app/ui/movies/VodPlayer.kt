@@ -330,8 +330,12 @@ internal fun VodPlayer(
                         Spacer(Modifier.height(PorchSpace.ListGap))
                         Text("This film can't skip.", style = PorchType.Body, color = PorchColors.Text)
                     }
+                    if (Films.showsBar(durationMs)) {
+                        Spacer(Modifier.height(PorchSpace.ListGap))
+                        ResumeBar(positionMs.toFloat() / durationMs, BarWidth)
+                    }
                     Spacer(Modifier.height(PorchSpace.ListGap))
-                    ResumeBar(if (durationMs > 0L) positionMs.toFloat() / durationMs else 0f, BarWidth)
+                    Text(Films.panelHint(paused, canSkip = durationMs > 0L && !cantSkip), style = PorchType.Hint, maxLines = 1)
                 }
             }
         }

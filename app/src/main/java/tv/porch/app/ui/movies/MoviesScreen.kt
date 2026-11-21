@@ -164,6 +164,9 @@ class MoviesViewModel(private val graph: AppGraph) : ViewModel() {
         }
     }
 
+    /** The film the viewer opened last, and whether from Continue watching. Kept here because this screen is rebuilt when Back comes from the player. */
+    var returnTo: Pair<Long, Boolean>? = null
+
     fun select(title: String) {
         selected.value = title
     }
@@ -191,8 +194,10 @@ fun MoviesScreen(
     val selectedTab = remember { FocusRequester() }
     val firstTile = remember { FocusRequester() }
     val firstContinue = remember { FocusRequester() }
+    val returnFocus = remember { FocusRequester() }
     val chipState = rememberLazyListState()
     val gridState = rememberLazyGridState()
+    val continueState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     var gridFocused by remember { mutableStateOf(false) }
     var tileFocused by remember { mutableStateOf(false) }
@@ -216,9 +221,29 @@ fun MoviesScreen(
     LaunchedEffect(ui.filmsLoading, ui.films.isEmpty(), ui.continueLoaded) {
         if (placed || ui.filmsLoading || !ui.continueLoaded) return@LaunchedEffect
         withFrameNanos { }
+        val back = model.returnTo
         if (!inChrome && !gridFocused) {
+            // Back from a film lands on that film's poster, not the first one.
+            val backIndex = back?.let { (id, fromContinue) ->
+                if (fromContinue) ui.continueWatching.indexOfFirst { it.film.streamId == id }
+                else ui.films.indexOfFirst { it.streamId == id }
+            } ?: -1
+            val landedBack = if (back != null && backIndex >= 0) {
+                if (back.second) {
+                    // The Continue row is the grid's first item; bring it into view, then scroll the row to the poster.
+                    if (gridState.layoutInfo.visibleItemsInfo.none { it.key == "continue" }) gridState.scrollToItem(0)
+                    continueState.scrollToItem(backIndex)
+                } else if (gridState.layoutInfo.visibleItemsInfo.none { it.key == ui.films[backIndex].streamId }) {
+                    gridState.scrollToItem(chipsIndex + 1 + backIndex)
+                }
+                withFrameNanos { }
+                returnFocus.tryFocus()
+            } else {
+                false
+            }
+            model.returnTo = null
             val start = MoviesFocus.start(ui.continueWatching.size, ui.films.size)
-            val landed = when (start) {
+            val landed = landedBack || when (start) {
                 MoviesFocus.Start.Continue -> firstContinue.tryFocus().also {
                     if (it && gridState.firstVisibleItemIndex != 0) gridState.scrollToItem(0)
                 }
@@ -277,14 +302,18 @@ fun MoviesScreen(
                         Column {
                             Text("Continue watching", style = PorchType.Section, modifier = Modifier.padding(horizontal = TilePad))
                             Spacer(Modifier.height(PorchSpace.ListGap))
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(PorchSpace.LoopPosterGap)) {
+                            LazyRow(state = continueState, horizontalArrangement = Arrangement.spacedBy(PorchSpace.LoopPosterGap)) {
                                 items(ui.continueWatching.size, key = { ui.continueWatching[it].film.streamId }) { index ->
                                     val item = ui.continueWatching[index]
                                     FilmTile(
                                         item.film, item.progress,
                                         (if (index == 0) Modifier.focusRequester(firstContinue) else Modifier)
+                                            .then(if (model.returnTo?.let { it.second && it.first == item.film.streamId } == true) Modifier.focusRequester(returnFocus) else Modifier)
                                             .focusProperties { up = selectedTab },
-                                    ) { open = item.film }
+                                    ) {
+                                        model.returnTo = item.film.streamId to true
+                                        open = item.film
+                                    }
                                 }
                             }
                         }
@@ -321,7 +350,11 @@ fun MoviesScreen(
                             val chipShown = chipState.layoutInfo.visibleItemsInfo.any { it.index == at }
                             up = if (chipsShown && chipShown) selectedChip else FocusRequester.Default
                         }
-                        FilmTile(ui.films[index], null, modifier.onFocusChanged { tileFocused = it.hasFocus }) { open = ui.films[index] }
+                        if (model.returnTo?.let { !it.second && it.first == ui.films[index].streamId } == true) modifier = modifier.focusRequester(returnFocus)
+                        FilmTile(ui.films[index], null, modifier.onFocusChanged { tileFocused = it.hasFocus }) {
+                            model.returnTo = ui.films[index].streamId to false
+                            open = ui.films[index]
+                        }
                     }
                 }
             }
@@ -337,7 +370,10 @@ fun MoviesScreen(
                 open = null
                 onPlay(film, startAtMs)
             },
-            onClose = { open = null },
+            onClose = {
+                open = null
+                model.returnTo = null
+            },
         )
     }
 }

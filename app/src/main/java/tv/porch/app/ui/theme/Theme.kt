@@ -268,6 +268,7 @@ object PorchSpace {
     val SheetWidth = 320.dp
     val MessageCardWidth = 500.dp
     val PanelPad = 24.dp
+    val LadderPositionWidth = 44.dp
     val CardPad = 32.dp
     val CardBadgeLeft = 40.dp
     val CardBadgeTop = 32.dp

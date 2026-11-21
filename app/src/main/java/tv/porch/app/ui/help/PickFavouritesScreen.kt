@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,6 +20,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.tv.material3.Text
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -42,6 +43,8 @@ import tv.porch.app.ui.theme.PorchType
 @Composable
 fun PickFavouritesScreen(graph: AppGraph, onTab: (String) -> Unit, onDone: () -> Unit) {
     val done = remember { FocusRequester() }
+    val firstChannel = remember { FocusRequester() }
+    var doneFocused by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var picked by remember { mutableStateOf(emptySet<Long>()) }
     val sections by produceState(emptyList<FavouriteTopics.Section>()) {
@@ -51,9 +54,16 @@ fun PickFavouritesScreen(graph: AppGraph, onTab: (String) -> Unit, onDone: () ->
         picked = found.flatMap { it.channels }.filter { it.favourite }.mapTo(HashSet()) { it.id }
         value = found
     }
-    LaunchedEffect(Unit) {
+    // Focus starts on Done while channels load, then moves to the first channel once there is one.
+    LaunchedEffect(sections.isNotEmpty()) {
         withFrameNanos { }
-        runCatching { done.requestFocus() }
+        if (sections.isNotEmpty()) {
+            withFrameNanos { }
+            // Only if the viewer has not already moved off Done.
+            if (doneFocused) runCatching { firstChannel.requestFocus() }
+        } else {
+            runCatching { done.requestFocus() }
+        }
     }
     Column(Modifier.fillMaxSize()) {
         TopBar(
@@ -61,29 +71,34 @@ fun PickFavouritesScreen(graph: AppGraph, onTab: (String) -> Unit, onDone: () ->
             title = "Pick channels",
             clock = formatHeaderClockLong(rememberNow()),
             tabs = Tabs.labels,
-            current = "Settings",
+            // No tab is lit: this is a step in a flow, not a tab.
+            current = null,
             onTab = onTab,
         )
         Column(Modifier.padding(horizontal = PorchSpace.Margin), verticalArrangement = Arrangement.spacedBy(PorchSpace.ListGap)) {
-            Text("These come first everywhere in Porch. You can change them any time.", style = PorchType.Body, color = PorchColors.Muted)
+            Text("The channels you pick become your favourites. They come first everywhere in Porch. You can change them any time.", style = PorchType.Body, color = PorchColors.Muted)
             // About ten seconds the first time on the Chromecast, while every channel's kind is read.
             if (sections.isEmpty()) Text("Finding channels…", style = PorchType.Body, color = PorchColors.Muted)
-            Pill(if (picked.isEmpty()) "Skip for now" else "Done (${picked.size})", modifier = Modifier.focusRequester(done), onClick = onDone)
+            Pill(if (picked.isEmpty()) "Skip for now" else "Done (${picked.size})", modifier = Modifier.focusRequester(done).onFocusChanged { doneFocused = it.isFocused }, onClick = onDone)
         }
         LazyColumn(
             Modifier.padding(horizontal = PorchSpace.Margin).padding(top = PorchSpace.ListGap),
             verticalArrangement = Arrangement.spacedBy(PorchSpace.ListGap),
         ) {
-            items(sections, key = { it.label }) { section ->
+            itemsIndexed(sections, key = { _, section -> section.label }) { position, section ->
                 Column(verticalArrangement = Arrangement.spacedBy(PorchSpace.ListGap)) {
                     Text(section.label, style = PorchType.Section, color = PorchColors.Text)
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(PorchSpace.FilterGap),
                         verticalArrangement = Arrangement.spacedBy(PorchSpace.FilterGap),
                     ) {
-                        section.channels.forEach { channel ->
+                        section.channels.forEachIndexed { index, channel ->
                             val on = channel.id in picked
-                            Pill(channel.shownTitle, selected = on) {
+                            Pill(
+                                channel.shownTitle,
+                                selected = on,
+                                modifier = if (position == 0 && index == 0) Modifier.focusRequester(firstChannel) else Modifier,
+                            ) {
                                 picked = if (on) picked - channel.id else picked + channel.id
                                 scope.launch { graph.repository.setFavourite(channel.id, !on) }
                             }

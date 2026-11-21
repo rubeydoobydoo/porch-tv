@@ -1,8 +1,17 @@
 # Porch plan: one core, two Android layouts, Apple later
 
-Written 29 Oct 2026 from Ruben's brief. Nothing here is built yet. The Studio TV design (`design/studio/`, PR 12) is part of this plan, not a separate one; its own PR list is in `docs/plan-studio-ui.md`.
+Written 29 Oct 2026 from Ruben's brief. The Android TV app is built and in daily use; the core extraction, the phone layout and Apple below are not started. The Studio TV design (`design/studio/`, PR 12) is part of this plan, not a separate one; its own PR list is in `docs/plan-studio-ui.md`.
 
-## Launch push (19 to 21 Nov 2026)
+## Status (22 Nov 2026)
+
+- **Launch push: done.** All five goals and both usability walks are merged (PRs 121, 124 to 141). Main a83bd64 is on the living room TV (20 Nov). Launch means "sideload for Dad plus clean repo"; the clean repo is done and Dad's install waits until next year (Ruben, 22 Nov). The APK is kept for it.
+- **Zap speed spike: done, shelved.** PR 142 kept the findings (`docs/spikes/2026-11-zap-speed.md`) and the fake provider switches, with no app code. Warm zapping is not built (see roadmap item 1).
+- **Next goal:** remember audio and subtitle choices per channel (roadmap item 3). It waits for Ruben's OK on its "It works when" contract in `docs/BOARD.md`.
+- **Live board:** `docs/BOARD.md` (NEEDS ME, DOING, NEXT, DONE).
+
+## Launch push (19 to 21 Nov 2026): done
+
+All five goals are merged. Goal 1: PR 124. Goal 2: PR 126 (and 127, hide a group fast). Goal 3: PR 130. Goal 4: PRs 121, 128 and 129. Goal 5: PRs 125, 131, 133, 135 and 136 (PR 27 closed). Walk fixes after the push: PRs 132, 134, 137 to 141.
 
 **Brief (Ruben, 19 Nov):** "set yourself AMBITIOUS GOALS ... think about USABILITY, DESIGN, EVERYTHING NEXT LEVEL. Dont waste the tokens on endless tests. lets get this to a super usable and awesome state for launch, with a clear roadmap working forward." **Launch (Ruben, 19 Nov):** "launch means sideload for dad plus clean repo". No store listing, no money.
 
@@ -45,15 +54,15 @@ It works when:
 **Not in this push:** a release signing key (a new key means the living room TV must uninstall, which wipes its login and favourites; keep the local debug key until a planned move), TMDB posters (needs an account and key: Ruben), store listing.
 
 ### Roadmap after launch
-1. Warm the channels above and below to cut the 3.2 s provider wait (spike and measure first).
-2. A now-and-next mini guide over video on Down, and number keys for channel numbers.
-3. Remember audio and subtitle choices per channel.
+1. ~~Warm the channels above and below.~~ Shelved 22 Nov after the spike (`docs/spikes/2026-11-zap-speed.md`): most logins allow 1 or 2 streams, and at 2 it made zaps about 2 s slower.
+2. ~~A now-and-next mini guide over video on Down, and number keys.~~ Dropped 22 Nov: Down is zap, and the Chromecast remote has no number keys.
+3. Remember audio and subtitle choices per channel (next; contract waits for Ruben's OK).
 4. Export the whole setup to another TV in one go (Dad's second TV).
 5. TMDB posters for Movies and Series (Ruben's account and key).
 6. Sleep timer, then Plex server support (check current docs first).
 7. Core extraction and the phone layout (below), then Apple.
 
-## Status (10 Nov 2026)
+## Earlier status (10 Nov 2026)
 
 **The bar (Ruben, 3 Nov):** a guest could use it easily and would say "wow, app quality". Judged from the couch. Quality checklist: `docs/quality-brief.md`.
 
@@ -79,11 +88,11 @@ It works when:
 
 **Not yet tested:** the guide job on a sleeping TV, the favourites picker on a real new install, network loss during a film or episode (`VodPlayer` has no retry loop: a failure shows "won't play right now", follow-up).
 
-**Later level ups:** Plex server support (check current docs first); sleep timer; live rewind spike; a now-and-next strip over video on Down.
+**Later level ups:** Plex server support (check current docs first); sleep timer; live rewind spike.
 
 **Picked from other AIs' ideas (10 Nov, checked against the code):**
 - [x] Decoder fallback: try the software decoder when the Chromecast's hardware one fails a stream (done 16 Nov in the live player and `VodPlayer`: `DefaultRenderersFactory.setEnableDecoderFallback(true)`). Not exercised on a real failing stream: the emulator can't be made to fail a hardware decoder on demand.
-- Warm the channels above and below: connect ahead of time to cut some of the 3.2 s provider wait. Spike and measure first.
+- Warm the channels above and below: spiked 21 Nov, shelved 22 Nov (see roadmap item 1).
 - Remember audio and subtitle choices per channel.
 - A locked simple mode for Dad: favourites and guide only, Settings behind a code (fits step 5).
 - Export the whole setup to another TV in one go, so Dad's is set up once (fits step 5).

@@ -260,7 +260,11 @@ fun PorchApp(graph: AppGraph, openChannel: Long? = null, onOpenHandled: () -> Un
         }
     }
 
+    // Set by push, cleared by showTab: tells Settings if it is a fresh tab visit or a Back.
+    val settingsBack = remember { booleanArrayOf(false) }
+
     fun push(route: Route) {
+        settingsBack[0] = stack.last() is Route.Settings
         stack = stack + route
     }
 
@@ -268,6 +272,7 @@ fun PorchApp(graph: AppGraph, openChannel: Long? = null, onOpenHandled: () -> Un
     fun showTab(route: Route) {
         // Simple mode opens only Home and the guide, whichever screen asks.
         if (!SimpleMode.allows(tabLabel(route), graph.simpleMode.on.value)) return
+        settingsBack[0] = false
         stack = Tabs.stackFor(Route.Home, route)
     }
 
@@ -488,6 +493,7 @@ fun PorchApp(graph: AppGraph, openChannel: Long? = null, onOpenHandled: () -> Un
                 )
                 Route.Settings -> SettingsScreen(
                     graph = graph,
+                    comingBack = settingsBack[0],
                     onTab = { tab -> openTab(tab) },
                     onAdd = { push(Route.Setup()) },
                     onEdit = { id -> push(Route.Setup(editId = id)) },

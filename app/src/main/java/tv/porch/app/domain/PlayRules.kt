@@ -18,6 +18,23 @@ object PlayRules {
     /** What Up or Down says when a zap list has no more channels that way. Zap does not wrap. */
     const val END_OF_LIST = "End of this list"
 
+    /**
+     * Whether Up or Down at the end of the list may say [END_OF_LIST]. Yes when nothing is on the banner or the banner is
+     * only the "Starting" words of a channel still buffering. Never over a drop or any other message.
+     */
+    fun canSayEndOfList(banner: String?, tryingNote: String?, stopped: Boolean): Boolean =
+        !stopped && (banner == null || isStartMessage(banner, tryingNote))
+
+    /** The banner while Porch tries another stream format for the channel that is starting. */
+    const val TRYING_FORMAT = "Trying another stream format…"
+
+    private fun isStartMessage(banner: String, tryingNote: String?): Boolean =
+        banner == startWords(false, tryingNote) || banner == startWords(true, tryingNote) || banner == TRYING_FORMAT
+
+    /** What the banner goes back to when [END_OF_LIST] fades: the start words if the channel was still starting, else nothing. */
+    fun afterEndOfList(before: String?, tryingNote: String?): String? =
+        before?.takeIf { isStartMessage(it, tryingNote) }
+
     /** The list position a zap lands on, or null at either end of the list. */
     fun zapTarget(pending: Int, delta: Int, size: Int): Int? = (pending + delta).takeIf { size > 0 && it in 0 until size }
 

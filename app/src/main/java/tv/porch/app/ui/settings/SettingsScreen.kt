@@ -27,6 +27,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
@@ -67,6 +70,7 @@ import tv.porch.app.ui.components.clickScale
 import tv.porch.app.ui.components.rememberNow
 import tv.porch.app.ui.theme.PorchColors
 import tv.porch.app.ui.theme.PorchRadius
+import tv.porch.app.domain.SettingsFocus
 import tv.porch.app.ui.theme.PorchSpace
 import tv.porch.app.ui.theme.PorchType
 
@@ -82,6 +86,8 @@ class SettingsViewModel : ViewModel() {
 fun SettingsScreen(
     graph: AppGraph,
     onTab: (String) -> Unit,
+    /** True when this is Back from a screen pushed on top of Settings, not a visit from the top tabs. */
+    comingBack: Boolean,
     onAdd: () -> Unit,
     onEdit: (Long) -> Unit,
     onPhone: () -> Unit,
@@ -124,8 +130,12 @@ fun SettingsScreen(
     fun rowModifier(key: String) = Modifier.focusRequester(rowRequester(key)).bringIntoViewRequester(bringers.getOrPut(key) { BringIntoViewRequester() })
     // The row to put focus on: the one we came back from, or the one just after a removed source.
     // A fresh visit lands on Channels, so hiding a group is OK, not three Downs (docs/DECISIONS.md, 19 Nov).
-    var wantFocus by remember { mutableStateOf<String?>(model.lastRow ?: "channels") }
+    var wantFocus by remember { mutableStateOf<String?>(SettingsFocus.startRow(model.lastRow, comingBack)) }
     var returnKey by remember { mutableStateOf<String?>(null) }
+    val listScroll = rememberScrollState()
+    val density = LocalDensity.current
+    // Where the Channels row ends in the list, so a fresh visit can open at the top when that row is still in view.
+    var channelsBottom by remember { mutableStateOf(0) }
 
     fun focus(key: String) {
         focusedKey = key
@@ -151,6 +161,9 @@ fun SettingsScreen(
         // A row restored below the fold (coming back from a sub-screen) has to scroll into view, once.
         delay(200)
         runCatching { bringers[focused]?.bringIntoView() }
+        val topPad = with(density) { PorchSpace.FocusRoom.roundToPx() }
+        // A fresh visit opens at the top, so Sources and the Actions heading show whole, when Channels still fits on screen.
+        if (!comingBack && focused == SettingsFocus.FRESH_ROW && channelsBottom > 0 && channelsBottom + topPad <= listScroll.viewportSize && focusedKey == SettingsFocus.FRESH_ROW) listScroll.scrollTo(0)
         wantFocus = null
     }
     BackHandler(enabled = sheetSource != null) { closeSheet() }
@@ -185,7 +198,7 @@ fun SettingsScreen(
             Column(
                 Modifier
                     .width(PorchSpace.SettingsList)
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(listScroll)
                     // Inside the scroll, so a label or row is never half-shown under the bar or the screen's edge.
                     .padding(top = PorchSpace.FocusRoom, bottom = PorchSpace.Margin),
                 verticalArrangement = Arrangement.spacedBy(PorchSpace.SettingsRowGap),
@@ -222,7 +235,7 @@ fun SettingsScreen(
                 ) { sources.forEach { graph.sync.refresh(it.id) } }
                 SettingsRow("Add a source", modifier = rowModifier("add"), onFocus = { focus("add") }, onClick = onAdd)
                 SettingsRow("Set up from your phone", modifier = rowModifier("phone"), onFocus = { focus("phone") }, onClick = onPhone)
-                SettingsRow("Channels", modifier = rowModifier("channels"), onFocus = { focus("channels") }, onClick = onChannels)
+                SettingsRow("Channels", modifier = rowModifier("channels").onGloballyPositioned { channelsBottom = it.boundsInParent().bottom.toInt() }, onFocus = { focus("channels") }, onClick = onChannels)
                 SettingsRow(
                     "Show channels without a guide",
                     trailing = if (showWithoutGuide) "On" else "Off",

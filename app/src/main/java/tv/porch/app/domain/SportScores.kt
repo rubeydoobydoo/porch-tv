@@ -19,8 +19,8 @@ data class LadderRow(val name: String, val position: Int, val stats: String)
 @Serializable
 data class Ladder(val league: String, val chip: String, val group: String?, val rows: List<LadderRow>)
 
-/** What a results or ladder row shows. [shown] is "Hidden" until [revealed]. */
-data class ScoreRow(val key: String, val title: String, val meta: String, val shown: String, val revealed: Boolean, val followed: Boolean)
+/** What a results or ladder row shows. A result's [shown] is "Hidden" until [revealed]. A ladder row is always revealed and has a [position]. */
+data class ScoreRow(val key: String, val title: String, val meta: String, val shown: String, val revealed: Boolean, val followed: Boolean, val position: Int? = null)
 
 data class ScoreSection(val heading: String, val rows: List<ScoreRow>)
 
@@ -101,21 +101,13 @@ object SportScoreRules {
             }
     }
 
-    /** One section per ladder, rows A to Z with followed first. */
-    fun ladderSections(ladders: List<Ladder>, follows: List<String>, revealed: Set<String>): List<ScoreSection> {
+    /** One section per ladder, rows in position order. Always shown; followed teams are marked but do not move. */
+    fun ladderSections(ladders: List<Ladder>, follows: List<String>): List<ScoreSection> {
         val wanted = follows.map(FollowTerms::words)
         return ladders.map { l ->
             val heading = if (l.group != null) "${l.league} · ${l.group}" else l.league
-            val ordered = l.rows.map { it to followed(wanted, it.name) }.sortedWith(compareBy({ !it.second }, { it.first.name.lowercase() }))
-            ScoreSection(heading, ordered.map { (row, follow) ->
-                val key = ladderKey(l, row)
-                val open = key in revealed
-                val shown = when {
-                    !open -> HIDDEN
-                    row.stats.isBlank() -> ordinal(row.position)
-                    else -> "${ordinal(row.position)} · ${row.stats}"
-                }
-                ScoreRow(key, row.name, "", shown, open, follow)
+            ScoreSection(heading, l.rows.sortedBy { it.position }.map { row ->
+                ScoreRow(ladderKey(l, row), row.name, "", row.stats, true, followed(wanted, row.name), row.position)
             })
         }
     }

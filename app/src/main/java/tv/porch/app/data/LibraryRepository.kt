@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import tv.porch.app.domain.BackupGuide
 import tv.porch.app.domain.Kind
+import tv.porch.app.domain.SourceNames
 import tv.porch.app.domain.Airing
 import tv.porch.app.domain.Channel
 import tv.porch.app.domain.ChannelFamilies
@@ -169,8 +170,10 @@ class LibraryRepository(
 
     suspend fun addSource(draft: SourceDraft): Long = withContext(Dispatchers.IO) {
         val clean = draft.cleaned()
+        // A name the viewer typed is kept as is (the draft may be unclean, so blank means not typed); a default one (the host) is numbered when another source already has it.
+        val shownName = SourceNames.resolve(draft.name, clean.name, db.sources().list().map { it.name })
         val entity = SourceEntity(
-            name = clean.name,
+            name = shownName,
             kind = clean.kind,
             m3uUrl = if (clean.kind == "m3u") clean.m3uUrl else null,
             xtreamServer = if (clean.kind == "xtream") XtreamUrls.normalizeServer(clean.server) else null,

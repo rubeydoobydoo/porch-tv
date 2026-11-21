@@ -3,7 +3,7 @@ package tv.porch.app.domain
 import java.util.Locale
 
 /**
- * The 24/7 tab: channels that play one show on a loop. They live in groups whose names start with "24/7", carry a logo
+ * The 24/7 tab: channels that play one show on a loop. They live in groups with a 24/7 label in the name, carry a logo
  * and never have guide data, so no other list shows them. Pure; the screen builds these off the main thread.
  */
 object LoopChannels {
@@ -14,7 +14,11 @@ object LoopChannels {
     // The same small raised letters ChannelNames drops ("RAW 60fps" written in superscript).
     private val raised = Regex("""[ʰ-˿ᴬ-ᶿ⁰-₟]""")
     private val labelWords = Regex("""(?<![\p{L}\p{N}])(?:vip|raw)(?![\p{L}\p{N}])""", RegexOption.IGNORE_CASE)
-    private val loopLabel = Regex("""^\s*24\s*/\s*7(?![\p{L}\p{N}])""")
+    // "24/7", "24 / 7", "24-7" or "24x7" as a whole token ("24/70" and "1247" are not).
+    private const val LOOP_TOKEN = """(?<![\p{L}\p{N}])24\s*[/\-xX]\s*7(?![\p{L}\p{N}])"""
+    private val loopToken = Regex(LOOP_TOKEN)
+    // Provider labels at the front: "EN|", "|UK|".
+    private val providerLabels = Regex("""^(?:\s*(?:\[[A-Za-z]{2,4}]|\|?\s*[A-Za-z]{2,4}\s*\|))+""")
     private val frameRate = Regex("""\s*(?<![\p{L}\p{N}])60(?:\s*fps)?\s*$""", RegexOption.IGNORE_CASE)
     private val spaces = Regex("""\s+""")
     private val edges = Regex("""^[\s|:\-–—]+|[\s|:\-–—]+$""")
@@ -22,7 +26,7 @@ object LoopChannels {
     // Lower-case inside an all-caps name, unless first: "King of the Hill".
     private val smallWords = setOf("a", "an", "and", "as", "at", "but", "by", "for", "from", "in", "of", "on", "or", "the", "to", "vs", "with")
 
-    fun inLoopGroup(group: String): Boolean = group.trimStart().startsWith("24/7")
+    fun inLoopGroup(group: String): Boolean = loopToken.containsMatchIn(group)
 
     /** A loop channel is in a 24/7 group and is not a section divider. */
     fun isLoop(channel: Channel): Boolean = inLoopGroup(channel.group) && !ChannelNames.isDivider(channel.name)
@@ -47,7 +51,8 @@ object LoopChannels {
 
     private fun computeGenre(group: String): String {
         var text = raised.replace(group, "")
-        text = loopLabel.replace(text, "")
+        text = providerLabels.replace(text, "")
+        text = loopToken.replace(text, " ")
         text = labelWords.replace(text, " ")
         text = spaces.replace(text, " ").trim()
         text = frameRate.replace(text, "")

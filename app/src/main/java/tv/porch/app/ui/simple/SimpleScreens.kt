@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,12 +29,14 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.tv.material3.Text
 import tv.porch.app.domain.OkHoldGuard
 import tv.porch.app.domain.SimpleCode
@@ -61,6 +64,9 @@ fun LeaveCard(onStay: () -> Unit, onLeave: () -> Unit, onSimpleOff: () -> Unit) 
         stay.tryFocus()
     }
     Dialog(onDismissRequest = onStay, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        // A dialog's window dims everything behind it. DESIGN.md bans translucent layers, so the card sits solid with no dim.
+        val window = (LocalView.current.parent as? DialogWindowProvider)?.window
+        SideEffect { window?.setDimAmount(0f) }
         Box(Modifier.fillMaxSize().backGoesBack(), contentAlignment = Alignment.Center) {
             Column(
                 Modifier
@@ -125,7 +131,7 @@ fun SimpleCodeScreen(turningOn: Boolean, saved: String?, onTurnOn: (String) -> U
     val (title, line) = when (step) {
         Step.Choose -> "Choose a code" to "Four numbers. You'll need them to turn simple mode off, so pick ones you'll remember."
         is Step.Confirm -> "Type it again" to "The same four numbers, to be sure."
-        Step.Unlock -> "Type the code" to "The four numbers chosen when simple mode was turned on."
+        Step.Unlock -> "Type the code" to "The four numbers chosen when simple mode was turned on. If you forget them, Porch's data has to be cleared in the TV's settings. That removes the login and favourites."
     }
 
     Column(Modifier.fillMaxSize().onFocusChanged { hasFocus = it.hasFocus }) {
@@ -187,22 +193,23 @@ fun WelcomeScreen(onDone: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         TopBar(title = "Welcome to Porch", clock = formatHeaderClockLong(rememberNow()), tabs = emptyList(), current = null, onTab = {})
         Column(Modifier.padding(start = PorchSpace.Margin, end = PorchSpace.Margin, top = PorchSpace.HelpTop)) {
-            Text("Three keys are all you need.", style = PorchType.Body, color = PorchColors.Muted)
+            Text("Three keys are all you need.", style = PorchType.GuideCell, color = PorchColors.Muted)
             Row(Modifier.padding(top = PorchSpace.HelpIntroGap)) {
                 WELCOME.forEach { (title, line) ->
                     Column(Modifier.width(PorchSpace.HelpColumn)) {
                         Text(title, style = PorchType.ScreenTitle, color = PorchColors.Text)
-                        Text(line, style = PorchType.Body, color = PorchColors.TextSecondary, modifier = Modifier.padding(top = PorchSpace.HelpTitleGap))
+                        Text(line, style = PorchType.Key, color = PorchColors.TextSecondary, modifier = Modifier.padding(top = PorchSpace.HelpTitleGap))
                     }
                 }
             }
-            Pill("Start watching", modifier = Modifier.padding(top = PorchSpace.HelpButtonGap).focusRequester(start), onClick = onDone)
+            Text("Start watching opens your channels.", style = PorchType.Key, color = PorchColors.TextSecondary, modifier = Modifier.padding(top = PorchSpace.HelpButtonGap))
+            Pill("Start watching", modifier = Modifier.padding(top = PorchSpace.TileGap).focusRequester(start), onClick = onDone)
         }
     }
 }
 
 private val WELCOME = listOf(
     "Up and Down" to "Change the channel while you watch.",
-    "OK" to "Shows what's on now.",
-    "Back" to "Goes to your list of channels.",
+    "OK" to "Shows what's on now. Press OK again to pause.",
+    "Back" to "Goes to your channels.",
 )

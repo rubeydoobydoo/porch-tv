@@ -150,7 +150,8 @@ class SetupServer private constructor(
             xmltvUrl = form["xmltv"].orEmpty(),
         )
         try {
-            onSaved?.invoke(draft.cleaned())
+            draft.cleaned() // Checks the form; the saved draft keeps a blank name so the TV can number a default one.
+            onSaved?.invoke(draft)
             respond(socket, 200, savedPage())
         } catch (error: IllegalArgumentException) {
             respond(socket, 400, page(error.message))

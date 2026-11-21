@@ -1,7 +1,6 @@
 package tv.porch.app.ui.loop
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,7 +38,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.tv.material3.Border
 import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
@@ -62,6 +60,7 @@ import tv.porch.app.data.PosterRatings
 import tv.porch.app.data.ShowPosters
 import tv.porch.app.domain.Channel
 import tv.porch.app.domain.LoopChannels
+import tv.porch.app.domain.LoopEmptyText
 import tv.porch.app.domain.Tabs
 import tv.porch.app.domain.formatHeaderClockLong
 import tv.porch.app.ui.VmFactory
@@ -95,9 +94,13 @@ data class LoopUi(
     /** The genre the grid shows, once the 200 ms settle has passed. */
     val genre: String = LoopChannels.ALL,
     val shelf: LoopShelf = LoopShelf(emptyList()),
+    /** The provider has 24/7 channels at all, shown or not. Decides what the empty screen says. */
+    val providerHasLoop: Boolean = false,
+    /** 24/7 groups exist, but only as hidden groups. */
+    val hiddenLoop: Boolean = false,
 )
 
-private class Built(val genres: List<String>, val shelves: Map<String, LoopShelf>)
+private class Built(val genres: List<String>, val shelves: Map<String, LoopShelf>, val providerHasLoop: Boolean, val hiddenLoop: Boolean)
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class LoopViewModel(graph: AppGraph) : ViewModel() {
@@ -111,13 +114,16 @@ class LoopViewModel(graph: AppGraph) : ViewModel() {
     }.distinctUntilChanged()
 
     // Built once per change to the channels or the picks, off the main thread: up to 2,800 channels.
-    private val built = combine(graph.repository.observeChannels(), graph.repository.observeChosenGroups()) { channels, chosen ->
+    private val built = combine(graph.repository.observeChannels(), graph.repository.observeChosenGroups(), graph.repository.observeHidden()) { channels, chosen, hidden ->
         val listed = LoopChannels.listed(channels, chosen)
         // A logo many channels share is the provider's generic one; worked out once for the list, here, off the main thread.
         val shared = LoopChannels.sharedLogos(listed)
         val items = LoopChannels.ordered(listed).map { LoopItem(it, LoopChannels.showName(it), LoopChannels.ownLogo(it, shared)) }
         val byGenre = items.groupBy { LoopChannels.genreOf(it.channel.group) }
         Built(
+            providerHasLoop = channels.any(LoopChannels::isLoop),
+            // observeChannels leaves hidden groups out, so a hidden 24/7 group is only seen in the hidden list.
+            hiddenLoop = hidden.any { LoopChannels.inLoopGroup(it.groupName) },
             genres = LoopChannels.genres(listed),
             shelves = byGenre.mapValues { LoopShelf(it.value) } + (LoopChannels.ALL to LoopShelf(items)),
         )
@@ -126,7 +132,7 @@ class LoopViewModel(graph: AppGraph) : ViewModel() {
     val state = combine(built, settled) { built, genre ->
         // A genre that is gone after a refresh falls back to All.
         val shown = if (genre in built.genres) genre else LoopChannels.ALL
-        LoopUi(loading = false, genres = built.genres, genre = shown, shelf = built.shelves[shown] ?: LoopShelf(emptyList()))
+        LoopUi(loading = false, genres = built.genres, genre = shown, shelf = built.shelves[shown] ?: LoopShelf(emptyList()), providerHasLoop = built.providerHasLoop, hiddenLoop = built.hiddenLoop)
     }
         .conflate()
         .flowOn(Dispatchers.Default)
@@ -214,7 +220,7 @@ fun LoopScreen(
         if (empty) {
             Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = PorchSpace.Margin), contentAlignment = Alignment.Center) {
                 Text(
-                    "No 24/7 channels are showing. Switch them on in Settings > Channels.",
+                    LoopEmptyText.say(ui.providerHasLoop, ui.hiddenLoop),
                     style = PorchType.Body,
                     color = PorchColors.Muted,
                 )
@@ -287,8 +293,8 @@ private fun ChipRow(
 }
 
 /**
- * One loop channel: the show's poster (see [PosterFace]), the show's name underneath. Focused, the plate gets a 3 dp outline with a
- * 2 dp gap and lifts a little, as on Home.
+ * One loop channel: the show's poster (see [PosterFace]), the show's name underneath. Focused, a solid `Focus` card holds both and
+ * lifts a little, the same as a Movies tile.
  */
 @Composable
 private fun LoopTile(item: LoopItem, posters: ShowPosters, ratings: PosterRatings, modifier: Modifier, onPlay: () -> Unit, onLong: () -> Unit) {
@@ -302,29 +308,23 @@ private fun LoopTile(item: LoopItem, posters: ShowPosters, ratings: PosterRating
             colors = ClickableSurfaceDefaults.colors(
                 containerColor = Color.Transparent,
                 contentColor = PorchColors.Text,
-                focusedContainerColor = Color.Transparent,
-                focusedContentColor = PorchColors.Text,
-                pressedContainerColor = Color.Transparent,
-                pressedContentColor = PorchColors.Text,
+                focusedContainerColor = PorchColors.Focus,
+                focusedContentColor = PorchColors.OnFocus,
+                pressedContainerColor = PorchColors.Focus,
+                pressedContentColor = PorchColors.OnFocus,
             ),
-            border = ClickableSurfaceDefaults.border(
-                focusedBorder = Border(BorderStroke(PorchFocus.TileOutline, PorchColors.Focus), shape = shape),
-                pressedBorder = Border(BorderStroke(PorchFocus.TileOutline, PorchColors.Focus), shape = shape),
-            ),
+            border = ClickableSurfaceDefaults.border(),
             scale = clickScale(PorchFocus.TileScale),
             glow = ClickableSurfaceDefaults.glow(),
         ) {
-            Box(Modifier.padding(TilePad)) { PosterFace(item, posters, ratings) }
+            // The fill holds the poster and the name, as on Movies: the name takes the surface's content colour.
+            Column(Modifier.padding(TilePad)) {
+                PosterFace(item, posters, ratings)
+                Spacer(Modifier.height(TilePad))
+                Spacer(Modifier.height(PorchSpace.ListGap))
+                Text(item.name, style = PorchType.TileTitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
-        Spacer(Modifier.height(PorchSpace.ListGap))
-        Text(
-            item.name,
-            style = PorchType.TileTitle,
-            color = PorchColors.Text,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = TilePad),
-        )
     }
 }
 

@@ -36,4 +36,32 @@ class PlayRulesTest {
         assertEquals("Starting catch-up…", PlayRules.startWords(catchup = true, tryingNote = null))
         assertEquals("Trying another copy…", PlayRules.startWords(catchup = false, tryingNote = "Trying another copy…"))
     }
+
+    @Test
+    fun endOfListIsSaidWhileANewChannelIsStarting() {
+        assertTrue(PlayRules.canSayEndOfList(banner = null, tryingNote = null, stopped = false))
+        assertTrue(PlayRules.canSayEndOfList(banner = "Starting…", tryingNote = null, stopped = false))
+        assertTrue(PlayRules.canSayEndOfList(banner = "Starting catch-up…", tryingNote = null, stopped = false))
+        assertTrue(PlayRules.canSayEndOfList(banner = "Trying another copy…", tryingNote = "Trying another copy…", stopped = false))
+    }
+
+    @Test
+    fun endOfListNeverCoversADropOrAnotherMessage() {
+        assertFalse(PlayRules.canSayEndOfList(banner = null, tryingNote = null, stopped = true))
+        assertFalse(PlayRules.canSayEndOfList(banner = "The stream dropped. Press Retry to try again.", tryingNote = null, stopped = false))
+        assertFalse(PlayRules.canSayEndOfList(banner = "This stream can't rewind.", tryingNote = null, stopped = false))
+    }
+
+    @Test
+    fun endOfListIsAlsoSaidWhileTryingAnotherStreamFormat() {
+        assertTrue(PlayRules.canSayEndOfList(banner = PlayRules.TRYING_FORMAT, tryingNote = null, stopped = false))
+    }
+
+    @Test
+    fun theStartWordsComeBackWhenTheEndOfListFades() {
+        assertEquals("Starting…", PlayRules.afterEndOfList(before = "Starting…", tryingNote = null))
+        assertEquals(PlayRules.TRYING_FORMAT, PlayRules.afterEndOfList(before = PlayRules.TRYING_FORMAT, tryingNote = null))
+        assertEquals(null, PlayRules.afterEndOfList(before = null, tryingNote = null))
+        assertEquals(null, PlayRules.afterEndOfList(before = "This stream can't rewind.", tryingNote = null))
+    }
 }

@@ -53,4 +53,18 @@ class FilmsUnknownLengthTest {
     }
 
     private fun episode(id: Long) = tv.porch.app.parse.XtreamEpisode(id, 1, id.toInt(), "Ep $id", "mkv", null, null)
+
+    @Test
+    fun noLengthHidesTheBarButKeepsTheHints() {
+        assertTrue(Films.showsBar(durationMs = 5_400_000L))
+        assertFalse(Films.showsBar(durationMs = 0L))
+        assertEquals("OK pauses · Left and Right skip 10 seconds · Back closes", Films.panelHint(paused = false, canSkip = true))
+        assertEquals("OK plays · Left and Right skip 10 seconds · Back closes", Films.panelHint(paused = true, canSkip = true))
+        assertEquals("OK pauses · Back closes", Films.panelHint(paused = false, canSkip = false))
+    }
+
+    @Test
+    fun aFilmThatWontSeekDoesNotOfferSkipping() {
+        assertEquals("OK pauses · Back closes", Films.panelHint(paused = false, canSkip = false))
+    }
 }

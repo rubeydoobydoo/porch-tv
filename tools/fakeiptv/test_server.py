@@ -9,6 +9,7 @@ import os
 import re
 import tempfile
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.request
@@ -183,6 +184,56 @@ class FakeProviderTest(unittest.TestCase):
         line = next(l for l in out.getvalue().splitlines() if l.startswith("CATCH-UP asked"))
         self.assertIn(f"read as Australia/Sydney = {when:%Y-%m-%dT%H:%MZ}", line)
         self.assertIn('guide programme at that Australia/Sydney time: "Formula 1: Practice 1"', line)
+
+
+class SpikeSwitchesTest(unittest.TestCase):
+    """The start delay and the connection limit (zap speed spike). Both are off by default."""
+
+    def serve(self, **kw):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        with open(os.path.join(tmp.name, "seg0.ts"), "wb") as f:
+            f.write(bytes([0x47]) + bytes(187))
+        with open(os.path.join(tmp.name, "index.json"), "w") as f:
+            json.dump({"segments": [{"file": "seg0.ts", "duration": 0.1}]}, f)
+        old = os.environ.get("PORCH_FAKEIPTV_CACHE")
+        os.environ["PORCH_FAKEIPTV_CACHE"] = tmp.name
+        self.addCleanup(lambda: os.environ.pop("PORCH_FAKEIPTV_CACHE", None) if old is None else os.environ.update(PORCH_FAKEIPTV_CACHE=old))
+        httpd = server.make_server(0, **kw)
+        threading.Thread(target=httpd.serve_forever, daemon=True).start()
+        self.addCleanup(httpd.server_close)
+        self.addCleanup(httpd.shutdown)
+        return f"http://127.0.0.1:{httpd.server_address[1]}", httpd
+
+    def test_a_second_stream_is_refused_at_the_limit_and_allowed_after_the_first_closes(self):
+        base, httpd = self.serve(max_connections=1)
+        first = urllib.request.urlopen(base + "/live/demo/demo-pass/1.ts", timeout=10)
+        first.read(188)
+        status, _, _ = get(base, "/live/demo/demo-pass/2.ts")
+        self.assertEqual(status, 503)
+        first.close()
+        for _ in range(50):  # the server notices the close on its next write
+            if httpd.state.open_streams == 0:
+                break
+            threading.Event().wait(0.1)
+        second = urllib.request.urlopen(base + "/live/demo/demo-pass/2.ts", timeout=10)
+        self.assertEqual(second.status, 200)
+        second.close()
+
+    def test_no_limit_by_default(self):
+        base, _ = self.serve()
+        a = urllib.request.urlopen(base + "/live/demo/demo-pass/1.ts", timeout=10)
+        b = urllib.request.urlopen(base + "/live/demo/demo-pass/2.ts", timeout=10)
+        self.assertEqual((a.status, b.status), (200, 200))
+        a.close()
+        b.close()
+
+    def test_start_delay_holds_back_the_first_byte(self):
+        base, _ = self.serve(start_delay=0.6)
+        began = time.monotonic()
+        with urllib.request.urlopen(base + "/live/demo/demo-pass/1.ts", timeout=10) as r:
+            self.assertEqual(r.status, 200)
+        self.assertGreaterEqual(time.monotonic() - began, 0.55)
 
 
 if __name__ == "__main__":

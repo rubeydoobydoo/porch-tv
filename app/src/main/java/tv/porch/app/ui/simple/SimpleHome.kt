@@ -105,7 +105,7 @@ fun SimpleHome(
 
     Column(Modifier.fillMaxSize()) {
         TopBar(
-            title = "Favourites",
+            title = "Your channels",
             clock = formatHeaderClockLong(rememberNow()),
             tabs = Tabs.labels,
             current = "Home",

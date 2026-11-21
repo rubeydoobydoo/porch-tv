@@ -79,4 +79,24 @@ class LoopChannelsTest {
         )
         assertEquals(listOf("Marina", "Anchor", "Beacon", "Zed"), ordered.map { LoopChannels.showName(it) })
     }
+
+    @Test
+    fun aLoopLabelCountsAnywhereAfterProviderLabels() {
+        for (group in listOf("EN| 24/7 CARTOONS", "|UK| 24/7 Kids", "24-7 KIDS", "24 / 7 Comedy", "24x7 Shows", "24/7 COMEDY VIP", "[EN] 24/7 Cartoons", "US| NEWS 24/7")) {
+            assertEquals(group, true, LoopChannels.inLoopGroup(group))
+        }
+        for (group in listOf("1247 Music", "24/70 Music", "UK| NEWS", "")) {
+            assertEquals(group, false, LoopChannels.inLoopGroup(group))
+        }
+    }
+
+    @Test
+    fun aGenreDropsTheProviderLabelAndTheLoopLabel() {
+        assertEquals("Cartoons", LoopChannels.genreOf("EN| 24/7 CARTOONS"))
+        assertEquals("Kids", LoopChannels.genreOf("|UK| 24-7 Kids"))
+        assertEquals("Comedy", LoopChannels.genreOf("24 / 7 Comedy"))
+        assertEquals("Comedy", LoopChannels.genreOf("24/7 COMEDY VIP"))
+        assertEquals("News", LoopChannels.genreOf("US| NEWS 24/7"))
+        assertEquals("Cartoons", LoopChannels.genreOf("[EN] 24/7 Cartoons"))
+    }
 }

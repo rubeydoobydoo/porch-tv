@@ -20,7 +20,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -195,8 +194,8 @@ fun SetupScreen(
                 val first = if (editing) Modifier.focusRequester(firstFocus) else Modifier
                 if (kind == "m3u") {
                     TvField("Playlist URL", playlist, { playlist = it }, modifier = first)
-                    TvField("Guide URL", guide, { guide = it })
-                    TvField("Name (optional)", name, { name = it }, modifier = Modifier.focusProperties { down = saveFocus }, onDone = ::save)
+                    TvField("Guide URL (needed for a playlist)", guide, { guide = it })
+                    TvField("Name (optional)", name, { name = it }, downTo = saveFocus, onDone = ::save)
                 } else {
                     TvField("Server", server, { server = it }, modifier = first)
                     TvField("Username", username, { username = it })
@@ -207,7 +206,7 @@ fun SetupScreen(
                         { guide = it },
                         placeholder = "Leave empty to use the one from the login",
                     )
-                    TvField("Name", name, { name = it }, modifier = Modifier.focusProperties { down = saveFocus }, onDone = ::save)
+                    TvField("Name", name, { name = it }, downTo = saveFocus, onDone = ::save)
                 }
                 error?.let { Text(it, style = PorchType.Body, color = PorchColors.TextSecondary) }
                 Row(horizontalArrangement = Arrangement.spacedBy(PorchSpace.SetupButtonGap)) {
@@ -244,7 +243,7 @@ fun SetupScreen(
                     Spacer(Modifier.height(PorchSpace.CardLineGap))
                     val url = address
                     Text(
-                        "Typing long addresses on a remote is slow. On a phone on the same Wi-Fi, open:",
+                        "Typing long addresses on a remote is slow. Start phone setup, then type the address it shows into a phone on the same Wi-Fi.",
                         style = PorchType.Body,
                         color = PorchColors.TextSecondary,
                     )
@@ -264,8 +263,7 @@ fun SetupScreen(
                     } else if (url == null) {
                         Text(phoneError ?: "Starting…", style = PorchType.Body, color = PorchColors.TextSecondary)
                     } else {
-                        Text(url.removePrefix("http://").trimEnd('/'), style = PorchType.ScreenTitle)
-                        Text(url.trimEnd('/'), style = PorchType.Meta)
+                        Text(url.trimEnd('/'), style = PorchType.ScreenTitle)
                         Spacer(Modifier.height(PorchSpace.CardLineGap * 2))
                         Text(
                             "Fill in the form there and press Send. It appears here, ready to save.",

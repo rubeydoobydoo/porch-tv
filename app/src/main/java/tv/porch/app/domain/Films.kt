@@ -15,6 +15,15 @@ object Films {
     fun clockPair(positionMs: Long, durationMs: Long): String =
         if (durationMs > 0L) "${clock(positionMs)} / ${clock(durationMs)}" else clock(positionMs)
 
+    /** The progress bar shows only when the stream gave a length; an empty track says nothing. */
+    fun showsBar(durationMs: Long): Boolean = durationMs > 0L
+
+    /** The key hints under the film panel. A stream that can't skip (no length, or it won't seek) doesn't offer it. */
+    fun panelHint(paused: Boolean, canSkip: Boolean): String {
+        val ok = if (paused) "OK plays" else "OK pauses"
+        return if (canSkip) "$ok · Left and Right skip 10 seconds · Back closes" else "$ok · Back closes"
+    }
+
     /** Where a skip of [stepMs] lands, or null when the stream can't seek (a seek then restarts it from 0:00). */
     fun skipTarget(positionMs: Long, stepMs: Long, durationMs: Long, seekable: Boolean): Long? {
         if (!seekable) return null

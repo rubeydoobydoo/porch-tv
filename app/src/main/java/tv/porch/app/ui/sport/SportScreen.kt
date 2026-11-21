@@ -315,7 +315,7 @@ fun SportScreen(graph: AppGraph, onTab: (String) -> Unit, onPlay: (List<Channel>
     val sections = remember(view, resultsUi.data, laddersUi.data, chip, follows, revealed, now / 60_000L) {
         when (view) {
             VIEW_RESULTS -> resultsUi.data?.let { SportScoreRules.resultSections(SportScoreRules.forChip(it.results, chip), now, zone, follows, revealed) }.orEmpty()
-            VIEW_LADDERS -> laddersUi.data?.let { SportScoreRules.ladderSections(SportScoreRules.forChip(it.ladders, chip), follows, revealed) }.orEmpty()
+            VIEW_LADDERS -> laddersUi.data?.let { SportScoreRules.ladderSections(SportScoreRules.forChip(it.ladders, chip), follows) }.orEmpty()
             else -> emptyList()
         }
     }
@@ -490,7 +490,7 @@ fun SportScreen(graph: AppGraph, onTab: (String) -> Unit, onPlay: (List<Channel>
                 } else {
                     val focused = sections.firstNotNullOfOrNull { section -> section.rows.firstOrNull { it.key == focusedKey } }
                     val okText = if (focused != null && !focused.revealed) {
-                        (if (view == VIEW_RESULTS) "OK shows the result" else "OK shows the position") + " · "
+                        "OK shows the result · "
                     } else ""
                     okText + "Back goes to the filters"
                 }
@@ -617,8 +617,9 @@ private fun SportRow(row: SportRowText, marks: ReminderMarks, canPress: Boolean,
 }
 
 /**
- * One result or ladder row: title, league beside it when there is one, a "Following" label, and at the right edge "Hidden"
- * until OK shows the result or position. OK on a shown row does nothing.
+ * One result or ladder row: title, league beside it when there is one, a "Following" label, and at the right edge the
+ * result. A result says "Hidden" until OK shows it. A ladder row always shows, with a position column at the left, and OK
+ * does nothing on it. OK on a shown row does nothing.
  */
 @Composable
 private fun ScoreRowView(row: ScoreRow, onPress: () -> Unit, modifier: Modifier) {
@@ -647,6 +648,10 @@ private fun ScoreRowView(row: ScoreRow, onPress: () -> Unit, modifier: Modifier)
             Modifier.fillMaxSize().padding(horizontal = PorchSpace.PanelPad),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // A ladder reads as a table: position column at the left, stats at the right edge.
+            if (row.position != null) {
+                Text(row.position.toString(), style = PorchType.Meta, color = quiet, maxLines = 1, modifier = Modifier.width(PorchSpace.LadderPositionWidth))
+            }
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 Text(row.title, style = PorchType.RowTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(2f, fill = false))
                 if (row.meta.isNotBlank()) {
